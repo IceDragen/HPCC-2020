@@ -121,32 +121,6 @@ class Bootstrap:
 			                                  enable_time_sort=True)
 			scheduler.online_simulate_with_sort_time()
 
-	def do_offline_simulate(self, n, rate, enable_bf, data_path, time_data_path, flag=True, itr=1):
-		task_queue = self.get_task_queue(numbered=n, itr=itr)
-		if flag:
-			scheduler = TaskSchedulerFor3D(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
-			                               time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
-			                               arrival_rate=rate, enable_back_filling=enable_bf)
-			scheduler.offline_simulate()
-		else:
-			scheduler = OldTaskSchedulerFor3D(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
-			                                  time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
-			                                  arrival_rate=rate, enable_back_filling=enable_bf)
-			scheduler.offline_simulate()
-
-	def do_offline_simulate_with_sorted_time_task(self, n, rate, enable_bf, data_path, time_data_path, flag=True,
-	                                              itr=1):
-		task_queue = self.get_sorted_time_task_queue(numbered=n, itr=itr)
-		if flag:
-			scheduler = TaskSchedulerFor3D(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
-			                               time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
-			                               arrival_rate=rate, enable_back_filling=enable_bf)
-			scheduler.offline_simulate()
-		else:
-			scheduler = OldTaskSchedulerFor3D(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
-			                                  time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
-			                                  arrival_rate=rate, enable_back_filling=enable_bf)
-			scheduler.offline_simulate()
 
 
 if __name__ == '__main__':
