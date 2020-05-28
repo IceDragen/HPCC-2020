@@ -14,7 +14,13 @@ from Simulator.Entities import FitMethodType, Task, RunningRecord
 
 
 class Conventional:
-	def __init__(self, size, task_queue, data_path=None, time_path=None, arrival_rate=2, method_name=FitMethodType.FIRST_FIT,
+	# hpc: the HPC system
+	# size: the size of HPC system
+	# data_path: the file path to store the utilization data
+	# time_path: the file path to store the cost time of a simulation
+	# arrival_rate: the lambda of Poisson process
+	def __init__(self, size, task_queue, data_path=None, time_path=None, arrival_rate=2,
+	             method_name=FitMethodType.FIRST_FIT,
 	             enable_back_filling=False, enable_visualize=False, st=1, enable_time_sort=False):
 		self.enable_back_filling = enable_back_filling
 		self.taskQueue = task_queue
@@ -77,7 +83,7 @@ class Conventional:
 		i = 1
 		for t in range(20):
 			j_name = 'j' + str(i)
-			volume = random.randint(1, int(self.total_nodes/2))
+			volume = random.randint(1, int(self.total_nodes / 2))
 			cost_time = random.randint(1, 10)
 			task = Task(j_name, volume, cost_time)
 			self.taskQueue.append(task)
@@ -86,6 +92,7 @@ class Conventional:
 		self.prototype_queue_cursor = 5
 		self.poisson_queue_cursor = 0
 
+	# judge if a task has been scheduled
 	def has_run(self, task):
 		return task.name in self.running_task_ids
 
@@ -101,7 +108,8 @@ class Conventional:
 				print()
 			print()
 
-	def schedule(self, method_name, task, time_matrix, last_location=None, is_back_filling_task=False, waiting_time=0, preserve_locations=None):
+	def schedule(self, method_name, task, time_matrix, last_location=None, is_back_filling_task=False, waiting_time=0,
+	             preserve_locations=None):
 		is_find = False
 		locations = []
 
@@ -109,7 +117,8 @@ class Conventional:
 			is_find, locations = self.first_fit(task, time_matrix, is_back_filling_task, waiting_time,
 			                                    preserve_locations)
 		elif method_name == FitMethodType.BEST_FIT:
-			is_find, locations = self.best_fit(task, time_matrix, is_back_filling_task, waiting_time, preserve_locations)
+			is_find, locations = self.best_fit(task, time_matrix, is_back_filling_task, waiting_time,
+			                                   preserve_locations)
 		elif method_name == FitMethodType.WORST_FIT:
 			is_find, locations = self.worst_fit(task, time_matrix, is_back_filling_task, waiting_time,
 			                                    preserve_locations)
@@ -119,6 +128,7 @@ class Conventional:
 
 		return is_find, locations
 
+	# the runnning jobs' rest time minus one minute
 	def time_process(self):
 		[height, rows, columns] = self.hpc.shape
 		for h in range(height):
@@ -135,6 +145,7 @@ class Conventional:
 
 		self.check_and_update_record()
 
+	# remove record from self.running_task_records which records'rest time is 0
 	def check_and_update_record(self):
 		removing_id_list = []
 		for i, r in enumerate(self.running_task_list):
@@ -151,6 +162,7 @@ class Conventional:
 			new_running_tasks = [t for i, t in enumerate(self.running_task_list) if i not in removing_id_list]
 			self.running_task_list = new_running_tasks
 
+	# judge if start or end recording system utilization
 	def check_if_adjust_record_util(self):
 		if 'j3530' in self.running_task_ids and self.target_fit_job_num == 2010:
 			self.start_record_util = False
@@ -182,6 +194,7 @@ class Conventional:
 			f.write(str(cost_time))
 			f.write('\n')
 
+	# process the task that can be scheduled currently
 	def do_after_find(self, task, locations):
 		self.update_hpc(locations, task)
 		self.check_if_adjust_record_util()
@@ -270,6 +283,7 @@ class Conventional:
 			d = sum_matrix[d1, i, d2]
 		return a + d - b - c
 
+	# get the four auxiliary matrix for finding a cuboid to put the task
 	def get_auxiliary_data(self, matrix):
 		height = np.zeros(matrix.shape, dtype=int)
 		depth_in = np.zeros(matrix.shape, dtype=int)
@@ -344,6 +358,7 @@ class Conventional:
 						right[h, i, j] = -1
 		return height, depth_out, depth_in, left, right
 
+	# calculate the amount of nodes between given two locations
 	def get_volumes_between_two_points(self, start_location, end_location):
 		(h1, i1, j1) = start_location
 		(h2, i2, j2) = end_location
@@ -363,6 +378,7 @@ class Conventional:
 					locations.append((h, i, j))
 		return locations
 
+	# the found cuboid maybe larger then the nodes of the task requested, so we must get the presize locations to put the task
 	def get_precise_start_and_end_locations_for_task(self, task, start_location, end_location):
 		(start_h, start_i, start_j) = start_location
 		(end_h, end_i, end_j) = end_location
@@ -381,6 +397,7 @@ class Conventional:
 			tmp = math.ceil(task.volume / s)
 			return start_location, (start_h + tmp - 1, end_i, end_j)
 
+	# judge if test_location is in the middle of start_location and end_location
 	def judge_in_middle(self, start_location, end_location, judge_location):
 		(start_h, start_i, start_j) = start_location
 		(end_h, end_i, end_j) = end_location
@@ -390,6 +407,7 @@ class Conventional:
 		c = start_j <= j_j <= end_j
 		return a and b and c
 
+	# judge if the task can be put in between the given two nodes
 	def check_if_back_filling_task_can_put(self, start_location, end_location, preserve_locations, task, waiting_time):
 		r1 = self.judge_in_middle(preserve_locations[0], preserve_locations[-1], start_location)
 		r2 = self.judge_in_middle(preserve_locations[0], preserve_locations[-1], end_location)
@@ -437,7 +455,8 @@ class Conventional:
 			locations = self.get_all_locations_between_two_points(start_location, end_location)
 		return is_find, locations
 
-	def next_fit(self, task, time_matrix, last_location, is_back_filling_task=False, waiting_time=0,preserve_locations=None):
+	def next_fit(self, task, time_matrix, last_location, is_back_filling_task=False, waiting_time=0,
+	             preserve_locations=None):
 		height, depth_out, depth_in, left, right = self.get_auxiliary_data(time_matrix)
 		is_find, locations = False, []
 		(talls, rows, columns) = self.hpc.shape
@@ -462,7 +481,8 @@ class Conventional:
 						is_find = flag = True
 						break
 					else:
-						if self.check_if_back_filling_task_can_put(start0_location, end0_location, preserve_locations, task, waiting_time):
+						if self.check_if_back_filling_task_can_put(start0_location, end0_location, preserve_locations,
+						                                           task, waiting_time):
 							is_find = flag = True
 							break
 				if flag:
@@ -583,11 +603,13 @@ class Conventional:
 			locations = self.get_all_locations_between_two_points(start_location, end_location)
 		return is_find, locations
 
+	# judge if current scheduled task is belong to the first synthetic workload
 	def increment_target_job_num(self, task):
 		job_id = int(task.name[1:])
 		if 1520 < job_id <= 3530:
 			self.target_fit_job_num += 1
 
+	# update self.hpc, update the task rest-time to the corresponding locations
 	def update_hpc(self, locations, task):
 		for t in locations:
 			self.hpc[t[0], t[1], t[2]] = task.time
@@ -612,6 +634,7 @@ class Conventional:
 				locations.append(t)
 		return locations
 
+	# get the locations and waiting time for current blocked job
 	def universal_find_nodes_and_min_wait_time(self, first_task):
 		locations = []
 		min_wait_time = sys.maxsize
@@ -628,6 +651,7 @@ class Conventional:
 				break
 		return locations, min_wait_time
 
+	# a auxiliary function to find after how many minutes the blocked task can be put on the system
 	def get_possible_time_matrix(self, matrix, judge_state):
 		[height, rows, columns] = matrix.shape
 		for h in range(height):
@@ -640,6 +664,7 @@ class Conventional:
 						matrix[h, i, j] = 0
 		return matrix
 
+	# start backfilling in offline situation
 	def start_offline_back_filling(self, next_index, waiting_time, preserve_locations):
 		cur_scheduled_tasks_num = self.has_scheduled_task_num
 		for i in range(next_index, len(self.taskQueue)):
@@ -654,6 +679,7 @@ class Conventional:
 				self.do_after_find(task, locations)
 		return cur_scheduled_tasks_num != self.has_scheduled_task_num
 
+	# start backfilling in online situation with FCFS strategy
 	def start_online_back_filling(self, waiting_time, preserve_locations):
 		cur_scheduled_tasks_num = self.has_scheduled_task_num
 		start_index = self.poisson_queue_cursor
@@ -666,7 +692,8 @@ class Conventional:
 			task = self.poisson_task_queue[i]
 			if self.has_run(task) or self.empty_nodes < task.volume or task.volume >= 50:
 				continue
-			result, locations = self.schedule(FitMethodType.BEST_FIT, task, self.hpc, is_back_filling_task=True, waiting_time=waiting_time, preserve_locations=preserve_locations)
+			result, locations = self.schedule(FitMethodType.BEST_FIT, task, self.hpc, is_back_filling_task=True,
+			                                  waiting_time=waiting_time, preserve_locations=preserve_locations)
 			if result:
 				self.do_after_find(task, locations)
 			task_num_counter += 1
@@ -677,6 +704,7 @@ class Conventional:
 				break
 		return cur_scheduled_tasks_num != self.has_scheduled_task_num
 
+	# start backfilling in online situation with SJF strategy
 	def start_online_back_filling_with_sort(self, waiting_time, preserve_locations):
 		cur_scheduled_tasks_num = self.has_scheduled_task_num
 		can_bf_task_num = self.arrival_rate
@@ -691,7 +719,8 @@ class Conventional:
 			if self.empty_nodes < task.volume or task.volume >= 50:
 				false_task_list.append(task)
 				continue
-			result, locations = self.schedule(FitMethodType.BEST_FIT, task, self.hpc, is_back_filling_task=True, waiting_time=waiting_time, preserve_locations=preserve_locations)
+			result, locations = self.schedule(FitMethodType.BEST_FIT, task, self.hpc, is_back_filling_task=True,
+			                                  waiting_time=waiting_time, preserve_locations=preserve_locations)
 			if result:
 				self.do_after_find(task, locations)
 			else:
@@ -707,6 +736,7 @@ class Conventional:
 			heapq.heappush(self.sorted_queue, t)
 		return cur_scheduled_tasks_num != self.has_scheduled_task_num
 
+	# count current system utilization
 	def count_utilization(self, counter):
 		if not self.start_record_util:
 			return
@@ -722,6 +752,7 @@ class Conventional:
 		if counter % 15 == 0:
 			self.u15.append(str_cur_util)
 
+	# process the task cannot scheduled currently
 	def process_can_not_schedule(self, task, task_index, is_online=False):
 		locations, wait_time = self.universal_find_nodes_and_min_wait_time(task)
 		if self.enable_back_filling and self.has_scheduled_task_num >= 1520:
@@ -812,6 +843,7 @@ class Conventional:
 			last_location = locations[task.volume - 1]
 			locations.clear()
 
+	# move λ tasks from prototype queue to the task queue which is a list for FCFS
 	def move_task_from_prototype_to_poisson(self):
 		move_task_num = self.arrival_rate
 		left_task_num = len(self.prototype_queue) - self.prototype_queue_cursor
@@ -864,6 +896,7 @@ class Conventional:
 			last_location = locations[task.volume - 1]
 			locations.clear()
 
+	# move λ tasks from prototype queue to the task queue which is a priority queue for SJF
 	def move_task_from_prototype_to_sorted_queue(self):
 		move_task_num = self.arrival_rate
 		left_task_num = len(self.prototype_queue) - self.prototype_queue_cursor

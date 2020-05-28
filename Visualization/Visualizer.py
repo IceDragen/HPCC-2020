@@ -15,12 +15,14 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
+# an enumeration to decide if continuing visualizing
 @unique
 class VMsgType(Enum):
 	CONTINUE = 'continue'
 	STOP = 'stop'
 
 
+# a message entity to deliver the time matrix
 class VisualizerMsg:
 	def __init__(self, msg, voxels):
 		self.msg = msg
@@ -28,6 +30,8 @@ class VisualizerMsg:
 
 
 class Visualizer:
+
+	# queue: store the delivered time matrix
 	def __init__(self, voxelQueue):
 		self.queue = voxelQueue
 		self.root = tkinter.Tk()
@@ -45,6 +49,7 @@ class Visualizer:
 		data_e[::2, ::2, ::2] = data
 		return data_e
 
+	# start visualization
 	def start(self):
 		# root = tkinter.Tk()
 		# root.wm_title("Embedding in Tk")
@@ -74,6 +79,7 @@ class Visualizer:
 
 		tkinter.mainloop()
 
+	# refresh the canvas for next visualization
 	def refresh(self):
 		v_msg = self.queue.get()
 		x, y, z, my_filled, my_fcolor, my_ecolor = self.get_data(v_msg.voxels)
@@ -94,6 +100,7 @@ class Visualizer:
 		print("you pressed {}".format(event.key))
 		key_press_handler(event, self.canvas, self.toolbar)
 
+	# get the data for visualization
 	def get_data(self, n_voxels):
 		facecolors = np.where(n_voxels, '#0f15bf', '#bf0f15')
 		# print(facecolors)

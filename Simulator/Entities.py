@@ -31,6 +31,7 @@ class Task:
 		return "task_name: %s \t volume: %d \t time: %d " % (self.name, self.volume, self.time)
 
 
+# store the message of running tasks
 class RunningRecord:
 
 	def __init__(self, name, volume, rest_time, wasted_nodes_locations=None):
@@ -45,6 +46,7 @@ class RunningRecord:
 		return "task_name: %s \t volume: %d \t rest_time: %d" % (self.name, self.volume, self.rest_time)
 
 
+# schedule method enumeration
 @unique
 class FitMethodType(Enum):
 	FIRST_FIT = 'first_fit'

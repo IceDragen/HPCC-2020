@@ -11,11 +11,15 @@ from Simulator.Conventional import Conventional
 
 
 class Bootstrap:
+	# pre_job_prototypes: pre-input job list
+	# input_job_prototypes: one synthetic workload
+	# hpc_size: the size of HPC
 	def __init__(self, v=24):
 		self.pre_job_prototypes = []
 		self.input_job_prototypes = []
 		self.hpc_size = [v, v, v]
 
+	# read job sizes and walltimes from data file
 	def data_init(self, itr=1):
 		data_path_prefix = 'Simulator/data/'
 		pre_job_data_path = data_path_prefix + '/pre_job_data_{}.csv'.format(itr)
@@ -36,6 +40,7 @@ class Bootstrap:
 			result.append(task)
 		return result
 
+	# put all jobs into a queue
 	def get_task_queue(self, numbered=3, itr=1):
 		self.data_init(itr)
 		i = 1
@@ -51,36 +56,8 @@ class Bootstrap:
 				all_jobs.append(t)
 		return all_jobs
 
-	def get_sorted_time_task_queue(self, numbered=3, itr=1):
-		self.data_init(itr)
-		i = 1
-		all_jobs = []
-		for task in self.pre_job_prototypes:
-			t = Task('j' + str(i), task.volume, task.time)
-			i = i + 1
-			all_jobs.append(t)
-		tmp_jobs = []
-		for a in range(0, numbered):
-			for task in self.input_job_prototypes:
-				t = Task('j' + str(i), task.volume, task.time)
-				i = i + 1
-				tmp_jobs.append(t)
-		tmp_jobs = sorted(tmp_jobs, key=functools.cmp_to_key(self.cmp))
-		all_jobs.extend(tmp_jobs)
-		return all_jobs
-
-	def cmp(self, t1, t2):
-		m = t1.time - t2.time
-		# print(m)
-		if m < 0:
-			return -1
-		elif m > 0:
-			return 1
-		else:
-			return 0
-
 	# online FCFS strategy
-	def do_online_simulate(self, n, rate, enable_bf, data_path, time_data_path, flag=True, itr=1):
+	def do_online_simulate_with_FCFS(self, n, rate, enable_bf, data_path, time_data_path, flag=True, itr=1):
 		task_queue = self.get_task_queue(numbered=n, itr=itr)
 		if flag:
 			scheduler = Wireless(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
@@ -94,7 +71,7 @@ class Bootstrap:
 			scheduler.online_simulate_with_FCFS()
 
 	# online SJF strategy
-	def do_online_simulate_with_sorted_time(self, n, rate, enable_bf, data_path, time_data_path, flag=True, itr=1):
+	def do_online_simulate_with_SJF(self, n, rate, enable_bf, data_path, time_data_path, flag=True, itr=1):
 		task_queue = self.get_task_queue(numbered=n, itr=itr)
 		if flag:
 			scheduler = Wireless(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
@@ -110,9 +87,8 @@ class Bootstrap:
 			scheduler.online_simulate_with_SJF()
 
 
-
 if __name__ == '__main__':
 	bootstrap = Bootstrap()
 	data_path = ''
 	time_data_path = ''
-	bootstrap.do_online_simulate(5, 5, True, data_path, time_data_path)
+	bootstrap.do_online_simulate_with_FCFS(5, 5, True, data_path, time_data_path)

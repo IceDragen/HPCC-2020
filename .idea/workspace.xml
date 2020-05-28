@@ -4,10 +4,12 @@
     <list default="true" id="d45c952a-9062-4d9d-93da-020db870738e" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Bootstrap.py" beforeDir="false" afterPath="$PROJECT_DIR$/Bootstrap.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/newsolution/Convention.py" beforeDir="false" afterPath="$PROJECT_DIR$/Simulator/Conventional.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/newsolution/Entity.py" beforeDir="false" afterPath="$PROJECT_DIR$/Simulator/Entities.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/newsolution/Wireless.py" beforeDir="false" afterPath="$PROJECT_DIR$/Simulator/Wireless.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/newsolution/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/Simulator/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Simulator/Conventional.py" beforeDir="false" afterPath="$PROJECT_DIR$/Simulator/Conventional.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Simulator/Entities.py" beforeDir="false" afterPath="$PROJECT_DIR$/Simulator/Entities.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Simulator/Wireless.py" beforeDir="false" afterPath="$PROJECT_DIR$/Simulator/Wireless.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/visualize/UtilizationVisualizer.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/visualize/Visualizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/Visualization/Visualizer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/visualize/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/Visualization/__init__.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

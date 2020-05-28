@@ -12,6 +12,11 @@ from Simulator.Entities import FitMethodType, Task, RunningRecord
 
 
 class Wireless:
+	# hpc: the HPC system
+	# size: the size of HPC system
+	# data_path: the file path to store the utilization data
+	# time_path: the file path to store the cost time of a simulation
+	# arrival_rate: the lambda of Poisson process
 	def __init__(self, size, task_queue, arrival_rate=200, method_name=FitMethodType.FIRST_FIT,
 	             data_path=None, time_path=None, enable_back_filling=False, enable_visualize=False, st=1,
 	             enable_time_sort=False):
@@ -67,6 +72,7 @@ class Wireless:
 		self.test_flag = True
 		self.not_zero_counter = 0
 
+	# judge if a task has been scheduled
 	def has_run(self, task):
 		return task.name in self.running_task_ids
 
@@ -77,7 +83,7 @@ class Wireless:
 			columns_list.append(i)
 		return columns_list
 
-	def print_matrix(self):
+	def print_time_matrix(self):
 		[height, rows, columns] = self.hpc.shape
 		columns_list = self.create_columns_list()
 		for h in range(height - 1, -1, -1):
@@ -121,6 +127,7 @@ class Wireless:
 
 		return found, locations
 
+	# the runnning jobs' rest time minus one minute
 	def time_process(self):
 		changed = False
 		need_visualize_change = False
@@ -142,6 +149,7 @@ class Wireless:
 		if self.counter > 0:
 			self.counter = self.counter - 1
 
+	# remove record from self.running_task_records which records'rest time is 0
 	def check_and_update_record(self):
 		removing_id_list = []
 		for i, r in enumerate(self.running_task_records):
@@ -172,6 +180,7 @@ class Wireless:
 			f.write(str(cost_time))
 			f.write('\n')
 
+	# judge if start or end recording system utilization
 	def check_if_adjust_record_util(self):
 		if 'j3530' in self.running_task_ids and self.target_fit_job_num == 2010:
 			self.start_record_util = False
@@ -188,6 +197,7 @@ class Wireless:
 				self.start_time = time.time()
 				self.has_start_time_count = True
 
+	# process the task that can be scheduled currently
 	def do_after_find(self, task, locations):
 		self.update_hpc(locations, task)
 		self.check_if_adjust_record_util()
@@ -306,6 +316,7 @@ class Wireless:
 		else:
 			return True, locations
 
+	# a subcall in next_fit
 	def sub_process(self, task, judge_state=0, is_back_filling_task=False, waiting_time=0, preserve_locations=None):
 		[height, rows, columns] = self.hpc.shape
 		count = 0
@@ -475,11 +486,13 @@ class Wireless:
 			return found, []
 		return found, old_locations[:task.volume]
 
+	# judge if current scheduled task is belong to the first synthetic workload
 	def increment_target_job_num(self, task):
 		job_id = int(task.name[1:])
 		if 1520 < job_id <= 3530:
 			self.target_fit_job_num += 1
 
+	# update self.hpc, update the task rest-time to the corresponding locations
 	def update_hpc(self, locations, task):
 		for t in locations:
 			if self.hpc[t[0], t[1], t[2]] != 0:
@@ -499,6 +512,7 @@ class Wireless:
 
 		return locations[task.volume - 1]
 
+	# judge if test_location is in the middle of start_location and end_location
 	def judge_in_middle(self, test_location, start_location, end_location):
 		[cur_height, cur_row, cur_col] = test_location
 		[start_height, start_row, start_col] = start_location
@@ -523,6 +537,7 @@ class Wireless:
 				in_middle = True
 		return in_middle
 
+	# get the next location of given location
 	def next_location(self, location):
 		[cur_height, cur_row, cur_col] = location
 		[height, row, columns] = self.hpc.shape
@@ -544,6 +559,7 @@ class Wireless:
 			return True, (start_h, start_row, start_col)
 		return False, ()
 
+	# get the locations and waiting time for current blocked job
 	def universal_find_nodes_and_min_wait_time(self, first_task):
 		locations = []
 		min_wait_time = sys.maxsize
@@ -558,6 +574,7 @@ class Wireless:
 				break
 		return locations, min_wait_time
 
+	# start backfilling in offline situation
 	def start_offline_back_filling(self, next_index, waiting_time, preserve_locations):
 		cur_scheduled_task_num = self.has_scheduled_task_num
 		for i in range(next_index, len(self.taskQueue)):
@@ -571,7 +588,8 @@ class Wireless:
 				self.do_after_find(task, locations)
 		return cur_scheduled_task_num != self.has_scheduled_task_num
 
-	def start_online_back_filling(self, waiting_time, preserve_locations):
+	# start backfilling in online situation with FCFS strategy
+	def start_online_back_filling_with_FCFS(self, waiting_time, preserve_locations):
 		cur_scheduled_task_num = self.has_scheduled_task_num
 		start_index = self.poisson_queue_cursor
 		end_index = len(self.poisson_task_queue)
@@ -595,7 +613,8 @@ class Wireless:
 
 		return cur_scheduled_task_num != self.has_scheduled_task_num
 
-	def start_online_back_filling_with_sort(self, waiting_time, preserve_locations):
+	# start backfilling in online situation with SJF strategy
+	def start_online_back_filling_with_SJF(self, waiting_time, preserve_locations):
 		cur_scheduled_task_num = self.has_scheduled_task_num
 		can_bf_task_num = self.arrival_rate
 		task_num_counter = 0
@@ -626,6 +645,7 @@ class Wireless:
 
 		return cur_scheduled_task_num != self.has_scheduled_task_num
 
+	# count current system utilization
 	def count_utilization(self, counter):
 		if not self.start_record_util:
 			return
@@ -641,24 +661,7 @@ class Wireless:
 		if counter % 15 == 0:
 			self.u15.append(str_cur_util)
 
-	def verify_jobs(self):
-		ids = set()
-		[height, rows, columns] = self.hpc.shape
-		columns_list = self.create_columns_list()
-		for h in range(height - 1, -1, -1):
-			if columns_list[0] != 0:
-				columns_list.reverse()
-			for i in range(rows):
-				for j in columns_list:
-					ids.add(self.job_name_matrix[h, i, j])
-				columns_list.reverse()
-		result = []
-		for id in ids:
-			task = self.taskQueue[id - 1]
-			result.append(task)
-		for task in result:
-			print(task)
-
+	# process the task cannot scheduled currently
 	def process_can_not_schedule(self, task, task_index, is_online=False):
 		locations, wait_time = self.universal_find_nodes_and_min_wait_time(task)
 		if self.enable_back_filling and self.has_scheduled_task_num >= 1520:
@@ -666,9 +669,9 @@ class Wireless:
 			if left_waiting_time > 0:
 				if is_online:
 					if not self.enable_sort:
-						self.start_online_back_filling(left_waiting_time, locations)
+						self.start_online_back_filling_with_FCFS(left_waiting_time, locations)
 					else:
-						self.start_online_back_filling_with_sort(left_waiting_time, locations)
+						self.start_online_back_filling_with_SJF(left_waiting_time, locations)
 				else:
 					self.start_offline_back_filling(task_index + 1, left_waiting_time, locations)
 			self.count_utilization(self.time_counter)
@@ -692,9 +695,9 @@ class Wireless:
 				if left_waiting_time > 0:
 					if is_online:
 						if not self.enable_sort:
-							self.start_online_back_filling(left_waiting_time, locations)
+							self.start_online_back_filling_with_FCFS(left_waiting_time, locations)
 						else:
-							self.start_online_back_filling_with_sort(left_waiting_time, locations)
+							self.start_online_back_filling_with_SJF(left_waiting_time, locations)
 					elif empty_nodes_changed or last_bf_success:
 						last_bf_success = self.start_offline_back_filling(task_index + 1, left_waiting_time, locations)
 		return locations
@@ -748,6 +751,7 @@ class Wireless:
 			locations.clear()
 			found = False
 
+	# move λ tasks from prototype queue to the task queue which is a list for FCFS
 	def move_task_from_prototype_to_poisson(self):
 		move_task_num = self.arrival_rate
 		left_task_num = len(self.prototype_queue) - self.prototype_queue_cursor
@@ -800,6 +804,7 @@ class Wireless:
 			locations.clear()
 			found = False
 
+	# move λ tasks from prototype queue to the task queue which is a priority queue for SJF
 	def move_task_from_prototype_to_sorted_queue(self):
 		move_task_num = self.arrival_rate
 		left_task_num = len(self.prototype_queue) - self.prototype_queue_cursor
