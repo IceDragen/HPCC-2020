@@ -3,6 +3,13 @@
   <component name="ChangeListManager">
     <list default="true" id="d45c952a-9062-4d9d-93da-020db870738e" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Bootstrap.py" beforeDir="false" afterPath="$PROJECT_DIR$/Bootstrap.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/newsolution/Entity.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsolution/Entity.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/newsolution/FileUtil.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/newsolution/taskschedulerfor3D.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsolution/Wireless.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/newsolution/taskschedulerfor3D_old.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsolution/Convention.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/visualize/taskschedulerfor3D.py" beforeDir="false" afterPath="$PROJECT_DIR$/visualize/WirelessVisualizer.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,5 +69,11 @@
       <updated>1589850211107</updated>
     </task>
     <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="450" y="164" width="627" height="524" key="StructurePopup" timestamp="1590026676213">
+      <screen x="0" y="23" width="1440" height="804" />
+    </state>
+    <state x="450" y="164" width="627" height="524" key="StructurePopup/0.23.1440.804@0.23.1440.804" timestamp="1590026676213" />
   </component>
 </project>

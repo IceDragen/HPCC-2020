@@ -13,17 +13,7 @@ import numpy as np
 from newsolution.Entity import FitMethodType, Task, RunningRecord
 
 
-class OldTaskSchedulerFor3D:
-	# size: 矩阵规模，是个list
-	# file_path: 存储task数据的文件路径
-	# taskQueue: 任务存放队列
-	# hpc: hpc矩阵
-	# task_num: 需要模拟的任务的数量
-	# arrival_rate: 柏松过程中的lambda，即每秒到达的平均任务数
-	# lock: 由于安排任务和任务时间减一都需要修改hpc矩阵，所以要用锁保证线程安全
-	# remaining_task_num: 剩余还没有被安排的任务数量，作为消费者和定时任务停止的判定条件之一
-	# scheduler： 定时任务调度器
-	# time_job_id: 定时任务的名字
+class Convention:
 	def __init__(self, size, task_queue, data_path=None, time_path=None, arrival_rate=2, method_name=FitMethodType.FIRST_FIT,
 	             enable_back_filling=False, enable_visualize=False, st=1, enable_time_sort=False):
 		self.enable_back_filling = enable_back_filling
@@ -44,7 +34,6 @@ class OldTaskSchedulerFor3D:
 		self.empty_nodes = self.total_nodes
 
 		self.method_name = method_name
-		# 记录目前已经安排了几个j1520-j3530之间的job
 		self.target_fit_job_num = 0
 		self.can_program_stop = False
 
@@ -62,37 +51,21 @@ class OldTaskSchedulerFor3D:
 		self.u10 = []
 		self.u15 = []
 
-		# for online
 		self.prototype_queue = self.taskQueue
 		self.poisson_task_queue = self.taskQueue[:1520]
 		self.has_left_task_to_fetch = True
 		self.time_strategy = st
-		# 指向下一次可以拿任务的位置
 		self.prototype_queue_cursor = 1520
-		# 指向下一次可以拿任务的位置
 		self.poisson_queue_cursor = 0
 		self.arrival_rate = arrival_rate
 
 		self.sorted_queue = []
 
-		# 本次back_filling结束倒计时
 		self.counter = 0
 		self.last_location = (0, 0, 0)
-		# self.test_set = set()
 
 		self.visualizer = None
 
-	def test_generate_task(self):
-		file_path = './data/task.txt'
-		f = open(file_path)
-		lines = f.readlines()
-		f.close()
-		for line in lines:
-			values = line.split(',')
-			task = Task(values[0], int(values[1]), int(values[2]))
-			self.taskQueue.append(task)
-
-	# 初始化job name矩阵
 	def job_name_matrix_init(self):
 		[height, rows, columns] = self.job_name_matrix.shape
 		for i in range(rows):
@@ -100,7 +73,6 @@ class OldTaskSchedulerFor3D:
 				for h in range(height):
 					self.job_name_matrix[i, j] = 0
 
-	# 生产任务
 	def generate_task(self):
 		i = 1
 		for t in range(20):
@@ -111,9 +83,7 @@ class OldTaskSchedulerFor3D:
 			self.taskQueue.append(task)
 			i = i + 1
 		self.poisson_task_queue = self.taskQueue[:5]
-		# 指向下一次可以拿任务的位置
 		self.prototype_queue_cursor = 5
-		# 指向下一次可以拿任务的位置
 		self.poisson_queue_cursor = 0
 
 	def has_run(self, task):
@@ -149,40 +119,21 @@ class OldTaskSchedulerFor3D:
 
 		return is_find, locations
 
-	# 每个已安排任务的可执行时间减一
 	def time_process(self):
-		changed = False
-		need_visualize_change = False
-
 		[height, rows, columns] = self.hpc.shape
 		for h in range(height):
 			for i in range(rows):
 				for j in range(columns):
 					if self.hpc[h, i, j] > 0:
 						self.hpc[h, i, j] = self.hpc[h, i, j] - 1
-						changed = True
 					if self.hpc[h, i, j] == 0:
 						self.job_name_matrix[h, i, j] = 0
-						if self.enable_visualize:
-							need_visualize_change = True
 
 		if self.enable_back_filling:
 			if self.counter > 0:
 				self.counter = self.counter - 1
 
 		self.check_and_update_record()
-
-	# if self.enable_visualize and need_visualize_change:
-	# 	self.post_process_voxels()
-
-	# if self.remaining_task_num == 0 and not changed:
-	# 	print("已完成所有任务")
-	# 	self.stop_visualize()
-
-	# def stop_visualize(self):
-	# 	if self.enable_visualize:
-	# 		vMsg = OldVisualizerMsg(VMsgType.STOP, self.hpc, [])
-	# 		self.voxelQueue.put(vMsg)
 
 	def check_and_update_record(self):
 		removing_id_list = []
@@ -201,7 +152,6 @@ class OldTaskSchedulerFor3D:
 			self.running_task_list = new_running_tasks
 
 	def check_if_adjust_record_util(self):
-		# 上限3530
 		if 'j3530' in self.running_task_ids and self.target_fit_job_num == 2010:
 			self.start_record_util = False
 			if not self.has_record_data:
@@ -211,7 +161,6 @@ class OldTaskSchedulerFor3D:
 				self.has_record_data = True
 				self.can_program_stop = True
 
-		# 下限1520
 		if 'j1520' in self.running_task_ids:
 			self.start_record_util = True
 			if not self.has_begin_time_count:
@@ -221,12 +170,7 @@ class OldTaskSchedulerFor3D:
 	def write_utilization_to_file(self):
 		delimiter = ','
 		data5 = delimiter.join(self.u5)
-		data10 = delimiter.join(self.u10)
-		data15 = delimiter.join(self.u15)
 		all_data = [data5]
-		# for str in all_data:
-		# 	print(all_data)
-
 		with open(self.util_data_file_path, 'a+') as f:
 			for data in all_data:
 				f.write(data)
@@ -239,14 +183,9 @@ class OldTaskSchedulerFor3D:
 			f.write('\n')
 
 	def do_after_find(self, task, locations):
-		# 如果已经找到，那么将对应的Nodes的数值赋为任务所需的执行时间
-
 		self.update_hpc(locations, task)
 		self.check_if_adjust_record_util()
-		# print('当前正在安排{}, 需要{}个nodes, 该task需要花费时间为{}个单位时间:'.format(task.name, task.volume, task.time))
-		# self.print_matrix()
 
-	# 左右移动的面
 	def get_xoz_sum_matrix(self, matrix):
 		result_matrix = np.zeros(matrix.shape, dtype=int)
 		(height, rows, columns) = matrix.shape
@@ -262,7 +201,6 @@ class OldTaskSchedulerFor3D:
 						h - 1, i - 1, j] + matrix[h, i, j]
 		return result_matrix
 
-	# j不变，h和i变
 	def get_xoz_matrix_sum(self, sum_matrix, start_location, end_location):
 		(start_h, start_i, start_j) = start_location
 		(end_h, end_i, end_j) = end_location
@@ -290,7 +228,6 @@ class OldTaskSchedulerFor3D:
 			d = sum_matrix[d1, d2, j]
 		return a + d - b - c
 
-	# 前后移动的面
 	def get_yoz_sum_matrix(self, matrix):
 		result_matrix = np.zeros(matrix.shape, dtype=int)
 		(height, rows, columns) = matrix.shape
@@ -306,7 +243,6 @@ class OldTaskSchedulerFor3D:
 						h - 1, i, j - 1] + matrix[h, i, j]
 		return result_matrix
 
-	# i不变，h和j变
 	def get_yoz_matrix_sum(self, sum_matrix, start_location, end_location):
 		(start_h, start_i, start_j) = start_location
 		(end_h, end_i, end_j) = end_location
@@ -346,7 +282,6 @@ class OldTaskSchedulerFor3D:
 		for h in range(talls):
 			for i in range(rows):
 				for j in range(columns):
-					# 向下找线
 					if matrix[h, i, j] == 0:
 						if h - 1 < 0:
 							height[h, i, j] = 1
@@ -355,7 +290,6 @@ class OldTaskSchedulerFor3D:
 					else:
 						height[h, i, j] = 0
 
-					# 根据线前后找面
 					if matrix[h, i, j] == 0:
 						last_in = last_out = i
 						start_h, start_j = h - height[h, i, j] + 1, j
@@ -383,7 +317,6 @@ class OldTaskSchedulerFor3D:
 						depth_out[h, i, j] = -1
 						depth_in[h, i, j] = -1
 
-					# 根据面左右找体
 					if matrix[h, i, j] == 0:
 						start_h, start_i = h - height[h, i, j] + 1, depth_out[h, i, j]
 						end_h, end_i = h, depth_in[h, i, j]
@@ -430,7 +363,6 @@ class OldTaskSchedulerFor3D:
 					locations.append((h, i, j))
 		return locations
 
-	# 找到的矩阵可能很大，任务其中一个子矩阵就够了，所以要找到放任务的精确位置
 	def get_precise_start_and_end_locations_for_task(self, task, start_location, end_location):
 		(start_h, start_i, start_j) = start_location
 		(end_h, end_i, end_j) = end_location
@@ -441,16 +373,12 @@ class OldTaskSchedulerFor3D:
 		if width >= task.volume:
 			tmp = task.volume
 			over_location = (start_h, start_i, start_j + tmp - 1)
-			# print('one line: {},{}'.format(tmp, len(locations)))
 			return start_location, over_location
 		elif s >= task.volume:
 			tmp = math.ceil(task.volume / width)
-			# print(task)
-			# print('one mian: {},{}'.format(tmp, len(locations)))
 			return start_location, (start_h, start_i + tmp - 1, end_j)
 		else:
 			tmp = math.ceil(task.volume / s)
-			# print('one changfanti: {},{}'.format(tmp, len(locations)))
 			return start_location, (start_h + tmp - 1, end_i, end_j)
 
 	def judge_in_middle(self, start_location, end_location, judge_location):
@@ -463,7 +391,6 @@ class OldTaskSchedulerFor3D:
 		return a and b and c
 
 	def check_if_back_filling_task_can_put(self, start_location, end_location, preserve_locations, task, waiting_time):
-		# 判断预留的位置是否和找出来的位置有交集
 		r1 = self.judge_in_middle(preserve_locations[0], preserve_locations[-1], start_location)
 		r2 = self.judge_in_middle(preserve_locations[0], preserve_locations[-1], end_location)
 		if r1 or r2:
@@ -473,7 +400,6 @@ class OldTaskSchedulerFor3D:
 				return False
 		return True
 
-	# 用first fit策略为一个任务分配Nodes
 	def first_fit(self, task, time_matrix, is_back_filling_task=False, waiting_time=0, preserve_locations=None):
 		height, depth_out, depth_in, left, right = self.get_auxiliary_data(time_matrix)
 		is_find, locations = False, []
@@ -498,7 +424,6 @@ class OldTaskSchedulerFor3D:
 						is_find = flag = True
 						break
 					else:
-						# 处理是back_filling TASK的情况
 						if self.check_if_back_filling_task_can_put(start0_location, end0_location, preserve_locations,
 						                                           task, waiting_time):
 							is_find = flag = True
@@ -512,7 +437,6 @@ class OldTaskSchedulerFor3D:
 			locations = self.get_all_locations_between_two_points(start_location, end_location)
 		return is_find, locations
 
-	# 用next fit策略为一个任务分配Nodes
 	def next_fit(self, task, time_matrix, last_location, is_back_filling_task=False, waiting_time=0,preserve_locations=None):
 		height, depth_out, depth_in, left, right = self.get_auxiliary_data(time_matrix)
 		is_find, locations = False, []
@@ -538,7 +462,6 @@ class OldTaskSchedulerFor3D:
 						is_find = flag = True
 						break
 					else:
-						# 处理是back_filling TASK的情况
 						if self.check_if_back_filling_task_can_put(start0_location, end0_location, preserve_locations, task, waiting_time):
 							is_find = flag = True
 							break
@@ -551,13 +474,11 @@ class OldTaskSchedulerFor3D:
 			locations = self.get_all_locations_between_two_points(start_location, end_location)
 			return is_find, locations
 
-		# 如果一开始就是从头开始找的，那么就没必要进行后面的first_fit了
 		if op.eq(last_location, (0, 0, 0)):
 			return is_find, locations
 
 		return self.first_fit(task, time_matrix, is_back_filling_task, waiting_time, preserve_locations)
 
-	# best fit策略为一个任务分配Nodes
 	def best_fit(self, task, time_matrix, is_back_filling_task=False, waiting_time=0, preserve_locations=None):
 		height, depth_out, depth_in, left, right = self.get_auxiliary_data(time_matrix)
 		is_find, locations = False, []
@@ -588,7 +509,6 @@ class OldTaskSchedulerFor3D:
 								flag = True
 								break
 					else:
-						# 处理是back_filling TASK的情况
 						if self.check_if_back_filling_task_can_put(start0_location, end0_location, preserve_locations,
 						                                           task, waiting_time):
 							is_find = True
@@ -641,7 +561,6 @@ class OldTaskSchedulerFor3D:
 								flag = True
 								break
 					else:
-						# 处理是back_filling TASK的情况
 						if self.check_if_back_filling_task_can_put(start0_location, end0_location, preserve_locations,
 						                                           task, waiting_time):
 							is_find = True
@@ -668,12 +587,8 @@ class OldTaskSchedulerFor3D:
 		job_id = int(task.name[1:])
 		if 1520 < job_id <= 3530:
 			self.target_fit_job_num += 1
-			# print(task.name + ' has been scheduled')
 
 	def update_hpc(self, locations, task):
-		# self.lock.acquire()
-		# try:
-		# 因为有可能找到的连续Nodes数量大于task的需求，所以要做判断，满足task需求了即可
 		for t in locations:
 			self.hpc[t[0], t[1], t[2]] = task.time
 			self.job_name_matrix[t[0], t[1], t[2]] = int(task.name[1:])
@@ -681,28 +596,14 @@ class OldTaskSchedulerFor3D:
 		self.empty_nodes = self.empty_nodes - len(locations)
 		self.has_scheduled_task_num = self.has_scheduled_task_num + 1
 		self.increment_target_job_num(task)
-		# if self.has_scheduled_task_num % 10 == 0:
-		# 	print('{}: {}'.format(self.method_name.value, self.has_scheduled_task_num))
 
 		wasted_locations = locations[task.volume:]
-		# print('wasted_nodes: {}'.format(len(wasted_locations)))
 		self.wasted_nodes = self.wasted_nodes + len(wasted_locations)
 		record = RunningRecord(task.name, len(locations), task.time, wasted_locations)
 		self.running_task_list.append(record)
 		self.running_task_list.sort(key=lambda x: x.rest_time, reverse=False)
 
 		self.running_task_ids.add(task.name)
-
-	# if self.enable_visualize:
-	# 	self.post_process_voxels()
-
-	# finally:
-	# 	self.lock.release()
-
-	# def post_process_voxels(self):
-	# 	locations = self.get_all_wasted_nodes_locations()
-	# 	vMsg = OldVisualizerMsg(VMsgType.CONTINUE, self.hpc, locations)
-	# 	self.voxelQueue.put(vMsg)
 
 	def get_all_wasted_nodes_locations(self):
 		locations = []
@@ -723,13 +624,8 @@ class OldTaskSchedulerFor3D:
 			tmp_time_matrix = self.get_possible_time_matrix(np.repeat(self.hpc, 1, axis=0), r.rest_time)
 			result, locations = self.schedule(FitMethodType.FIRST_FIT, first_task, tmp_time_matrix)
 			if result:
-				# print('wait_time: {}\tlocations: {}'.format(r.rest_time, locations))
-				# self.test_flag = False
 				min_wait_time = r.rest_time
 				break
-		# if min_wait_time == tmp:
-		# 	r = self.running_task_list[-1]
-		# 	min_wait_time = r.rest_time
 		return locations, min_wait_time
 
 	def get_possible_time_matrix(self, matrix, judge_state):
@@ -756,7 +652,6 @@ class OldTaskSchedulerFor3D:
 			                                  waiting_time=waiting_time, preserve_locations=preserve_locations)
 			if result:
 				self.do_after_find(task, locations)
-		# 如果不等，说明有任务放上去了，这次bf是成功的
 		return cur_scheduled_tasks_num != self.has_scheduled_task_num
 
 	def start_online_back_filling(self, waiting_time, preserve_locations):
@@ -780,7 +675,6 @@ class OldTaskSchedulerFor3D:
 				self.time_counter = self.time_counter + 1
 				self.count_utilization(self.time_counter)
 				break
-		# 如果不等，说明有任务放上去了，这次bf是成功的
 		return cur_scheduled_tasks_num != self.has_scheduled_task_num
 
 	def start_online_back_filling_with_sort(self, waiting_time, preserve_locations):
@@ -811,7 +705,6 @@ class OldTaskSchedulerFor3D:
 				break
 		for t in false_task_list:
 			heapq.heappush(self.sorted_queue, t)
-		# 如果不等，说明有任务放上去了，这次bf是成功的
 		return cur_scheduled_tasks_num != self.has_scheduled_task_num
 
 	def count_utilization(self, counter):
@@ -831,9 +724,6 @@ class OldTaskSchedulerFor3D:
 
 	def process_can_not_schedule(self, task, task_index, is_online=False):
 		locations, wait_time = self.universal_find_nodes_and_min_wait_time(task)
-		# print('{} 需要等待{}, 需要{}个nodes'.format(task.name, wait_time, len(locations)))
-		# 在这一时间立即开始一次back-filling
-		# 之后把这里的改成self.has_scheduled_task_num >= 1520，这里为了测试暂时改成0了
 		if self.enable_back_filling and self.has_scheduled_task_num >= 1520:
 			left_waiting_time = wait_time
 			if left_waiting_time > 0:
@@ -859,13 +749,11 @@ class OldTaskSchedulerFor3D:
 					move_task_num = self.move_task_from_prototype_to_poisson()
 				if move_task_num == 0:
 					self.has_left_task_to_fetch = False
-			# 之后把这里的改成self.has_scheduled_task_num >= 1520，这里为了测试暂时改成0了
 			if self.enable_back_filling and self.has_scheduled_task_num >= 1520:
 				left_waiting_time = i
 				empty_nodes_num_changed = (cur_empty_nodes != self.empty_nodes)
 				if empty_nodes_num_changed:
 					cur_empty_nodes = self.empty_nodes
-				# 如果经过一个单位时间之后空nodes数量没变且上一次bf没有任务被调度上去，那么这一次也不会有任务被调度上去
 				if left_waiting_time > 0:
 					if is_online:
 						if not self.enable_sort:
@@ -877,8 +765,6 @@ class OldTaskSchedulerFor3D:
 		return locations
 
 	def offline_simulate(self):
-		# self.generate_offline_task()
-		# print(len(self.taskQueue))
 		last_location = (0, 0, 0)
 		locations = []
 		for i, task in enumerate(self.taskQueue):
@@ -890,12 +776,10 @@ class OldTaskSchedulerFor3D:
 			if not found:
 				locations = self.process_can_not_schedule(task, i)
 			self.do_after_find(task, locations)
-			# print('task:{}'.format(task))
-			# print('{}:{}'.format(found, locations))
 			last_location = locations[task.volume - 1]
 			locations.clear()
 
-	def online_simulate(self):
+	def online_simulate_with_FCFS(self):
 		last_location = (0, 0, 0)
 		locations = []
 		task_num = len(self.prototype_queue)
@@ -915,16 +799,9 @@ class OldTaskSchedulerFor3D:
 			if self.has_run(task):
 				continue
 
-			# 大于50后面改回来
-			# if task.volume >= 50:
-			# 	self.running_task_ids.add(task.name)
-			# 	self.increment_target_job_num(task)
-			# 	continue
-
 			found, locations = self.schedule(self.method_name, task, time_matrix=self.hpc, last_location=last_location)
 			schedule_task_num_here += 1
 			if self.time_strategy == 2 and schedule_task_num_here == self.arrival_rate:
-				# 从头开始计数
 				schedule_task_num_here = 0
 				self.time_process()
 				self.time_counter = self.time_counter + 1
@@ -948,7 +825,7 @@ class OldTaskSchedulerFor3D:
 		self.prototype_queue_cursor = self.prototype_queue_cursor + move_task_num
 		return move_task_num
 
-	def online_simulate_with_sort_time(self):
+	def online_simulate_with_SJF(self):
 		last_location = (0, 0, 0)
 		locations = []
 		task_num = len(self.prototype_queue)
@@ -972,17 +849,10 @@ class OldTaskSchedulerFor3D:
 			if self.has_run(task):
 				continue
 
-			# 大于50后面改回来
-			# if task.volume >= 50:
-			# 	self.running_task_ids.add(task.name)
-			# 	self.increment_target_job_num(task)
-			# 	continue
-
 			found, locations = self.schedule(self.method_name, task, time_matrix=self.hpc, last_location=last_location)
 			if self.has_scheduled_task_num >= 1520:
 				schedule_task_num_here += 1
 			if self.time_strategy == 2 and schedule_task_num_here == self.arrival_rate:
-				# 从头开始计数
 				schedule_task_num_here = 0
 				self.move_task_from_prototype_to_sorted_queue()
 				self.time_process()
@@ -1006,15 +876,3 @@ class OldTaskSchedulerFor3D:
 			heapq.heappush(self.sorted_queue, task)
 		self.prototype_queue_cursor = self.prototype_queue_cursor + move_task_num
 		return move_task_num
-
-
-if __name__ == '__main__':
-	v = 4
-	hpc_size = [v, v, v]
-	# scheduler3D = OldTaskSchedulerFor3D(hpc_size, [], method_name=FitMethodType.NEXT_FIT, enable_back_filling=True)
-	# scheduler3D.generate_task()
-	# start_time = time.time()
-	# scheduler3D.online_simulate()
-	# end_time = time.time()
-	# print('{}秒'.format(end_time-start_time))
-	# print(scheduler3D.u5)

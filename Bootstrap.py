@@ -6,8 +6,8 @@ from multiprocessing.context import Process
 from multiprocessing import Pool
 
 from newsolution.Entity import Task, FitMethodType
-from newsolution.taskschedulerfor3D import TaskSchedulerFor3D
-from newsolution.taskschedulerfor3D_old import OldTaskSchedulerFor3D
+from newsolution.Wireless import Wireless
+from newsolution.Convention import Convention
 
 
 class TaskDeco:
@@ -95,31 +95,31 @@ class Bootstrap:
 	def do_online_simulate(self, n, rate, enable_bf, data_path, time_data_path, flag=True, itr=1):
 		task_queue = self.get_task_queue(numbered=n, itr=itr)
 		if flag:
-			scheduler = TaskSchedulerFor3D(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
-			                               time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
-			                               arrival_rate=rate, enable_back_filling=enable_bf, st=2)
-			scheduler.online_simulate()
+			scheduler = Wireless(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
+			                     time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
+			                     arrival_rate=rate, enable_back_filling=enable_bf, st=2)
+			scheduler.online_simulate_with_FCFS()
 		else:
-			scheduler = OldTaskSchedulerFor3D(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
-			                                  time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
-			                                  arrival_rate=rate, enable_back_filling=enable_bf, st=2)
-			scheduler.online_simulate()
+			scheduler = Convention(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
+			                       time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
+			                       arrival_rate=rate, enable_back_filling=enable_bf, st=2)
+			scheduler.online_simulate_with_FCFS()
 
 	# online SJF strategy
 	def do_online_simulate_with_sorted_time(self, n, rate, enable_bf, data_path, time_data_path, flag=True, itr=1):
 		task_queue = self.get_task_queue(numbered=n, itr=itr)
 		if flag:
-			scheduler = TaskSchedulerFor3D(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
-			                               time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
-			                               arrival_rate=rate, enable_back_filling=enable_bf, st=2,
-			                               enable_time_sort=True)
-			scheduler.online_simulate_with_sort_time()
+			scheduler = Wireless(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
+			                     time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
+			                     arrival_rate=rate, enable_back_filling=enable_bf, st=2,
+			                     enable_time_sort=True)
+			scheduler.online_simulate_with_SJF()
 		else:
-			scheduler = OldTaskSchedulerFor3D(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
-			                                  time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
-			                                  arrival_rate=rate, enable_back_filling=enable_bf, st=2,
-			                                  enable_time_sort=True)
-			scheduler.online_simulate_with_sort_time()
+			scheduler = Convention(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
+			                       time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
+			                       arrival_rate=rate, enable_back_filling=enable_bf, st=2,
+			                       enable_time_sort=True)
+			scheduler.online_simulate_with_SJF()
 
 
 

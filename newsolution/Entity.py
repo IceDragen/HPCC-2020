@@ -3,9 +3,9 @@ from enum import unique, Enum
 
 class Task:
 	"""
-		name：task名字
-		volume：task需要几个node
-		time：task需要花费的时间
+		name：task id
+		volume：task requesting nodes
+		time：task walltime
 	"""
 
 	def __init__(self, name, volume, time):
