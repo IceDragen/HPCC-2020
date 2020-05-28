@@ -6,4 +6,4 @@
 
 3. Simulator/Convention.py implememts the conventional Blue Waters system with 3D torus interconnect
 
-3. Visualization/Visualizer implements the visualization of the system utilization the HPC system with 3D torus interconnect.
+4. Visualization/Visualizer implements the visualization of the system utilization the HPC system with 3D torus interconnect.
