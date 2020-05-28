@@ -9,7 +9,7 @@
       <change beforePath="$PROJECT_DIR$/newsolution/FileUtil.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/newsolution/taskschedulerfor3D.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsolution/Wireless.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/newsolution/taskschedulerfor3D_old.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsolution/Convention.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/visualize/taskschedulerfor3D.py" beforeDir="false" afterPath="$PROJECT_DIR$/visualize/WirelessVisualizer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/visualize/taskschedulerfor3D.py" beforeDir="false" afterPath="$PROJECT_DIR$/visualize/UtilizationVisualizer.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
