@@ -5,21 +5,9 @@ import time
 from multiprocessing.context import Process
 from multiprocessing import Pool
 
-from newsolution.Entity import Task, FitMethodType
-from newsolution.Wireless import Wireless
-from newsolution.Convention import Convention
-
-
-class TaskDeco:
-
-	def __init__(self, n, rate, itr, process) -> None:
-		self.n = n
-		self.rate = rate
-		self.itr = itr
-		self.p = process
-
-	def __str__(self):
-		return "n: %d \t rate: %d \t itr: %d " % (self.n, self.rate, self.itr)
+from Simulator.Entities import Task, FitMethodType
+from Simulator.Wireless import Wireless
+from Simulator.Conventional import Conventional
 
 
 class Bootstrap:
@@ -29,7 +17,7 @@ class Bootstrap:
 		self.hpc_size = [v, v, v]
 
 	def data_init(self, itr=1):
-		data_path_prefix = './newsolution/data/'
+		data_path_prefix = 'Simulator/data/'
 		pre_job_data_path = data_path_prefix + '/pre_job_data_{}.csv'.format(itr)
 		input_job_data_path = data_path_prefix + '/input_job_data_{}.csv'.format(itr)
 		self.pre_job_prototypes = self.get_task_prototype(pre_job_data_path)
@@ -100,9 +88,9 @@ class Bootstrap:
 			                     arrival_rate=rate, enable_back_filling=enable_bf, st=2)
 			scheduler.online_simulate_with_FCFS()
 		else:
-			scheduler = Convention(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
-			                       time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
-			                       arrival_rate=rate, enable_back_filling=enable_bf, st=2)
+			scheduler = Conventional(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
+			                         time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
+			                         arrival_rate=rate, enable_back_filling=enable_bf, st=2)
 			scheduler.online_simulate_with_FCFS()
 
 	# online SJF strategy
@@ -115,10 +103,10 @@ class Bootstrap:
 			                     enable_time_sort=True)
 			scheduler.online_simulate_with_SJF()
 		else:
-			scheduler = Convention(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
-			                       time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
-			                       arrival_rate=rate, enable_back_filling=enable_bf, st=2,
-			                       enable_time_sort=True)
+			scheduler = Conventional(size=self.hpc_size, task_queue=task_queue, data_path=data_path,
+			                         time_path=time_data_path, method_name=FitMethodType.FIRST_FIT,
+			                         arrival_rate=rate, enable_back_filling=enable_bf, st=2,
+			                         enable_time_sort=True)
 			scheduler.online_simulate_with_SJF()
 
 

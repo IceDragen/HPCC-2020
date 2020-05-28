@@ -10,10 +10,10 @@ import heapq
 
 import numpy as np
 
-from newsolution.Entity import FitMethodType, Task, RunningRecord
+from Simulator.Entities import FitMethodType, Task, RunningRecord
 
 
-class Convention:
+class Conventional:
 	def __init__(self, size, task_queue, data_path=None, time_path=None, arrival_rate=2, method_name=FitMethodType.FIRST_FIT,
 	             enable_back_filling=False, enable_visualize=False, st=1, enable_time_sort=False):
 		self.enable_back_filling = enable_back_filling

@@ -8,7 +8,7 @@ import heapq
 
 import numpy as np
 
-from newsolution.Entity import FitMethodType, Task, RunningRecord
+from Simulator.Entities import FitMethodType, Task, RunningRecord
 
 
 class Wireless:
