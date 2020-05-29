@@ -14,9 +14,10 @@ from Simulator.Entities import FitMethodType, Task, RunningRecord
 class Wireless:
 	# hpc: the HPC system
 	# size: the size of HPC system
-	# data_path: the file path to store the utilization data
+	# data_path: the file path to store the data of system utilization 
+	# taskQueue: the input jobs of N synthetic workloads
 	# time_path: the file path to store the cost time of a simulation
-	# arrival_rate: the lambda of Poisson process
+	# arrival_rate: the job arrival rate λ 
 	def __init__(self, size, task_queue, arrival_rate=200, method_name=FitMethodType.FIRST_FIT,
 	             data_path=None, time_path=None, enable_back_filling=False, enable_visualize=False, st=1,
 	             enable_time_sort=False):
@@ -72,7 +73,7 @@ class Wireless:
 		self.test_flag = True
 		self.not_zero_counter = 0
 
-	# judge if a task has been scheduled
+	# test if a task has been scheduled
 	def has_run(self, task):
 		return task.name in self.running_task_ids
 
@@ -96,6 +97,7 @@ class Wireless:
 				columns_list.reverse()
 			print()
 
+	# the matrix of job ID
 	def print_job_matrix(self):
 		[height, rows, columns] = self.hpc.shape
 		columns_list = self.create_columns_list()
@@ -127,7 +129,7 @@ class Wireless:
 
 		return found, locations
 
-	# the runnning jobs' rest time minus one minute
+	# the decrease of execution time of each running job
 	def time_process(self):
 		changed = False
 		need_visualize_change = False
@@ -149,7 +151,7 @@ class Wireless:
 		if self.counter > 0:
 			self.counter = self.counter - 1
 
-	# remove record from self.running_task_records which records'rest time is 0
+	# remove a job from the system once complete
 	def check_and_update_record(self):
 		removing_id_list = []
 		for i, r in enumerate(self.running_task_records):
@@ -180,7 +182,7 @@ class Wireless:
 			f.write(str(cost_time))
 			f.write('\n')
 
-	# judge if start or end recording system utilization
+	# test if start or end system utilization recording
 	def check_if_adjust_record_util(self):
 		if 'j3530' in self.running_task_ids and self.target_fit_job_num == 2010:
 			self.start_record_util = False
@@ -197,7 +199,7 @@ class Wireless:
 				self.start_time = time.time()
 				self.has_start_time_count = True
 
-	# process the task that can be scheduled currently
+	# process the task that can be currently scheduled 
 	def do_after_find(self, task, locations):
 		self.update_hpc(locations, task)
 		self.check_if_adjust_record_util()
@@ -486,13 +488,13 @@ class Wireless:
 			return found, []
 		return found, old_locations[:task.volume]
 
-	# judge if current scheduled task is belong to the first synthetic workload
+	# determine if current scheduled task is belong to the first synthetic workload
 	def increment_target_job_num(self, task):
 		job_id = int(task.name[1:])
 		if 1520 < job_id <= 3530:
 			self.target_fit_job_num += 1
 
-	# update self.hpc, update the task rest-time to the corresponding locations
+	# update self.hpc, update the mapping of the remaining running time of each task to the corresponding locations
 	def update_hpc(self, locations, task):
 		for t in locations:
 			if self.hpc[t[0], t[1], t[2]] != 0:
@@ -512,7 +514,7 @@ class Wireless:
 
 		return locations[task.volume - 1]
 
-	# judge if test_location is in the middle of start_location and end_location
+	# Determine if test_location is in the middle of start_location and end_location
 	def judge_in_middle(self, test_location, start_location, end_location):
 		[cur_height, cur_row, cur_col] = test_location
 		[start_height, start_row, start_col] = start_location
@@ -537,7 +539,7 @@ class Wireless:
 				in_middle = True
 		return in_middle
 
-	# get the next location of given location
+	# get the next location of current location
 	def next_location(self, location):
 		[cur_height, cur_row, cur_col] = location
 		[height, row, columns] = self.hpc.shape
@@ -559,7 +561,7 @@ class Wireless:
 			return True, (start_h, start_row, start_col)
 		return False, ()
 
-	# get the locations and waiting time for current blocked job
+	# get the waiting time and the locations for currently blocked job
 	def universal_find_nodes_and_min_wait_time(self, first_task):
 		locations = []
 		min_wait_time = sys.maxsize
@@ -645,7 +647,7 @@ class Wireless:
 
 		return cur_scheduled_task_num != self.has_scheduled_task_num
 
-	# count current system utilization
+	# calcualte current system utilization
 	def count_utilization(self, counter):
 		if not self.start_record_util:
 			return
@@ -661,7 +663,7 @@ class Wireless:
 		if counter % 15 == 0:
 			self.u15.append(str_cur_util)
 
-	# process the task cannot scheduled currently
+	#  process the currently blocked task
 	def process_can_not_schedule(self, task, task_index, is_online=False):
 		locations, wait_time = self.universal_find_nodes_and_min_wait_time(task)
 		if self.enable_back_filling and self.has_scheduled_task_num >= 1520:
@@ -751,7 +753,7 @@ class Wireless:
 			locations.clear()
 			found = False
 
-	# move λ tasks from prototype queue to the task queue which is a list for FCFS
+	# move λ tasks from prototype queue to the task queue under FCFS
 	def move_task_from_prototype_to_poisson(self):
 		move_task_num = self.arrival_rate
 		left_task_num = len(self.prototype_queue) - self.prototype_queue_cursor
@@ -804,7 +806,7 @@ class Wireless:
 			locations.clear()
 			found = False
 
-	# move λ tasks from prototype queue to the task queue which is a priority queue for SJF
+	# move λ tasks from prototype queue to the task queue under SJF
 	def move_task_from_prototype_to_sorted_queue(self):
 		move_task_num = self.arrival_rate
 		left_task_num = len(self.prototype_queue) - self.prototype_queue_cursor
