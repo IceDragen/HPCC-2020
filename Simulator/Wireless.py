@@ -121,11 +121,6 @@ class Wireless:
 			found, locations = self.first_fit(task, 0, is_back_filling_task, waiting_time, preserve_locations)
 		elif self.method_name == FitMethodType.BEST_FIT:
 			found, locations = self.best_fit(task, 0, is_back_filling_task, waiting_time, preserve_locations)
-		elif self.method_name == FitMethodType.WORST_FIT:
-			found, locations = self.worst_fit(task, 0, is_back_filling_task, waiting_time, preserve_locations)
-		elif self.method_name == FitMethodType.NEXT_FIT:
-			found, locations = self.next_fit(task, last_location, 0, is_back_filling_task, waiting_time,
-			                                 preserve_locations)
 
 		return found, locations
 
@@ -204,7 +199,6 @@ class Wireless:
 		self.update_hpc(locations, task)
 		self.check_if_adjust_record_util()
 
-
 	def get_start_and_end_location(self, locations):
 		if locations is not None:
 			return locations[0], locations[-1]
@@ -246,117 +240,6 @@ class Wireless:
 			return False, []
 
 		return True, locations
-
-	def next_fit(self, task, last_location, judge_state=0, is_back_filling_task=False, waiting_time=0,
-	             preserve_locations=None):
-
-		[height, rows, columns] = self.hpc.shape
-		count = 0
-		locations = []
-
-		found, next_location = self.next_location(last_location)
-
-		if not found:
-			result, locations = self.sub_process(task, judge_state, is_back_filling_task, waiting_time,
-			                                     preserve_locations)
-			if result:
-				return result, locations
-			else:
-				return False, []
-
-		(start_h, start_i, start_j) = next_location
-		if start_i % 2 == 0:
-			columns_list = [x for x in range(start_j, columns)]
-		else:
-			columns_list = [x for x in range(start_j, -1, -1)]
-		height_list = [x for x in range(start_h, height)]
-		start_location = None
-		end_location = None
-		if is_back_filling_task:
-			[start_location, end_location] = self.get_start_and_end_location(preserve_locations)
-
-		for i in range(start_i, rows):
-			for j in columns_list:
-				for h in height_list:
-					if count >= task.volume:
-						break
-					if self.hpc[h, i, j] <= judge_state:
-						if is_back_filling_task and self.judge_in_middle((h, i, j), start_location,
-						                                                 end_location) and task.time > waiting_time:
-							count = 0
-							locations.clear()
-							continue
-						count = count + 1
-						locations.append((h, i, j))
-					elif self.hpc[h, i, j] > judge_state:
-						count = 0
-						locations.clear()
-				if count >= task.volume:
-					break
-				if len(height_list) < height:
-					for value in range(start_h):
-						height_list.insert(value, value)
-			if count >= task.volume:
-				break
-			if len(columns_list) < columns:
-				if start_i % 2 == 0:
-					for value in range(start_j):
-						columns_list.insert(value, value)
-				else:
-					columns_list.reverse()
-					for value in range(start_j + 1, columns):
-						columns_list.append(value)
-					columns_list.reverse()
-			columns_list.reverse()
-		if count < task.volume:
-			result, locations = self.sub_process(task, judge_state, is_back_filling_task, waiting_time,
-			                                     preserve_locations)
-			if result:
-				return result, locations
-			else:
-				return False, []
-		else:
-			return True, locations
-
-	# a subcall in next_fit
-	def sub_process(self, task, judge_state=0, is_back_filling_task=False, waiting_time=0, preserve_locations=None):
-		[height, rows, columns] = self.hpc.shape
-		count = 0
-		locations = []
-		columns_list = self.create_columns_list()
-		break_flag = False
-		start_location = None
-		end_location = None
-		if is_back_filling_task:
-			[start_location, end_location] = self.get_start_and_end_location(preserve_locations)
-
-		for i in range(rows):
-			for j in columns_list:
-				for h in range(height):
-					if count >= task.volume:
-						break_flag = True
-						break
-					if self.hpc[h, i, j] <= judge_state:
-						if is_back_filling_task and self.judge_in_middle((h, i, j), start_location,
-						                                                 end_location) and task.time > waiting_time:
-							count = 0
-							locations.clear()
-							continue
-						count = count + 1
-						locations.append((h, i, j))
-					elif self.hpc[h, i, j] > judge_state:
-						count = 0
-						locations.clear()
-				if break_flag:
-					break
-			if break_flag:
-				break
-			columns_list.reverse()
-
-		if count < task.volume:
-			return False, ()
-		else:
-			return True, locations
 
 	def best_fit(self, task, judge_state=0, is_back_filling_task=False, waiting_time=0, preserve_locations=None):
 		[height, rows, columns] = self.hpc.shape
@@ -430,62 +313,6 @@ class Wireless:
 		if not found:
 			return found, []
 
-		return found, old_locations[:task.volume]
-
-	def worst_fit(self, task, judge_state=0, is_back_filling_task=False, waiting_time=0, preserve_locations=None):
-		[height, rows, columns] = self.hpc.shape
-		old_count = -1
-		old_locations = []
-		cur_count = 0
-		locations = []
-		flag = False
-		columns_list = self.create_columns_list()
-		start_location = None
-		end_location = None
-		if is_back_filling_task:
-			[start_location, end_location] = self.get_start_and_end_location(preserve_locations)
-
-		for i in range(rows):
-			for j in columns_list:
-				for h in range(height):
-					if self.hpc[h, i, j] <= judge_state:
-						if self.hpc[h, i, j] <= judge_state:
-							if is_back_filling_task and self.judge_in_middle((h, i, j), start_location,
-							                                                 end_location) and task.time > waiting_time:
-								if cur_count >= task.volume and cur_count > old_count:
-									old_count = cur_count
-									old_locations = locations[:]
-									cur_count = 0
-									locations.clear()
-								else:
-									cur_count = 0
-									locations.clear()
-								continue
-						cur_count = cur_count + 1
-						locations.append((h, i, j))
-					if self.hpc[h, i, j] > judge_state:
-						if cur_count >= task.volume and cur_count > old_count:
-							old_count = cur_count
-							old_locations = locations[:]
-							cur_count = 0
-							locations.clear()
-						else:
-							cur_count = 0
-							locations.clear()
-			columns_list.reverse()
-
-		if cur_count >= task.volume and cur_count > old_count:
-			old_count = cur_count
-			old_locations = locations[:]
-			cur_count = 0
-			locations.clear()
-
-		found = False
-		if old_count >= task.volume:
-			found = True
-
-		if not found:
-			return found, []
 		return found, old_locations[:task.volume]
 
 	# determine if current scheduled task is belong to the first synthetic workload
@@ -576,20 +403,6 @@ class Wireless:
 				break
 		return locations, min_wait_time
 
-	# start backfilling in offline situation
-	def start_offline_back_filling(self, next_index, waiting_time, preserve_locations):
-		cur_scheduled_task_num = self.has_scheduled_task_num
-		for i in range(next_index, len(self.taskQueue)):
-			if self.empty_nodes == 0:
-				break
-			task = self.taskQueue[i]
-			if self.has_run(task) or self.empty_nodes < task.volume or task.volume >= 50:
-				continue
-			result, locations = self.first_fit(task, 0, True, waiting_time, preserve_locations)
-			if result:
-				self.do_after_find(task, locations)
-		return cur_scheduled_task_num != self.has_scheduled_task_num
-
 	# start backfilling in online situation with FCFS strategy
 	def start_online_back_filling_with_FCFS(self, waiting_time, preserve_locations):
 		cur_scheduled_task_num = self.has_scheduled_task_num
@@ -647,7 +460,7 @@ class Wireless:
 
 		return cur_scheduled_task_num != self.has_scheduled_task_num
 
-	# calcualte current system utilization
+	# calculate current system utilization
 	def count_utilization(self, counter):
 		if not self.start_record_util:
 			return
@@ -675,7 +488,7 @@ class Wireless:
 					else:
 						self.start_online_back_filling_with_SJF(left_waiting_time, locations)
 				else:
-					self.start_offline_back_filling(task_index + 1, left_waiting_time, locations)
+					pass
 			self.count_utilization(self.time_counter)
 		cur_empty_nodes = self.empty_nodes
 		last_bf_success = True
@@ -701,23 +514,8 @@ class Wireless:
 						else:
 							self.start_online_back_filling_with_SJF(left_waiting_time, locations)
 					elif empty_nodes_changed or last_bf_success:
-						last_bf_success = self.start_offline_back_filling(task_index + 1, left_waiting_time, locations)
+						pass
 		return locations
-
-	def offline_simulate(self):
-		last_location = (-1, 0, 0)
-		locations = []
-		for i, task in enumerate(self.taskQueue):
-			if self.can_program_stop:
-				break
-			if self.has_run(task):
-				continue
-			found, locations = self.schedule(task, last_location)
-			if not found:
-				locations = self.process_can_not_schedule(task, i)
-			self.do_after_find(task, locations)
-			last_location = locations[task.volume - 1]
-			locations.clear()
 
 	def online_simulate_with_FCFS(self):
 		last_location = (-1, 0, 0)

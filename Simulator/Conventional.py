@@ -72,27 +72,14 @@ class Conventional:
 		self.last_location = (0, 0, 0)
 
 		self.visualizer = None
-		
-            # the matrix of job ID
+
+	# the matrix of job ID
 	def job_name_matrix_init(self):
 		[height, rows, columns] = self.job_name_matrix.shape
 		for i in range(rows):
 			for j in range(columns):
 				for h in range(height):
 					self.job_name_matrix[i, j] = 0
-
-	def generate_task(self):
-		i = 1
-		for t in range(20):
-			j_name = 'j' + str(i)
-			volume = random.randint(1, int(self.total_nodes / 2))
-			cost_time = random.randint(1, 10)
-			task = Task(j_name, volume, cost_time)
-			self.taskQueue.append(task)
-			i = i + 1
-		self.poisson_task_queue = self.taskQueue[:5]
-		self.prototype_queue_cursor = 5
-		self.poisson_queue_cursor = 0
 
 	# test if a task has been scheduled
 	def has_run(self, task):
@@ -120,12 +107,6 @@ class Conventional:
 			                                    preserve_locations)
 		elif method_name == FitMethodType.BEST_FIT:
 			is_find, locations = self.best_fit(task, time_matrix, is_back_filling_task, waiting_time,
-			                                   preserve_locations)
-		elif method_name == FitMethodType.WORST_FIT:
-			is_find, locations = self.worst_fit(task, time_matrix, is_back_filling_task, waiting_time,
-			                                    preserve_locations)
-		elif method_name == FitMethodType.NEXT_FIT:
-			is_find, locations = self.next_fit(task, time_matrix, last_location, is_back_filling_task, waiting_time,
 			                                   preserve_locations)
 
 		return is_find, locations
@@ -457,50 +438,6 @@ class Conventional:
 			locations = self.get_all_locations_between_two_points(start_location, end_location)
 		return is_find, locations
 
-	def next_fit(self, task, time_matrix, last_location, is_back_filling_task=False, waiting_time=0,
-	             preserve_locations=None):
-		height, depth_out, depth_in, left, right = self.get_auxiliary_data(time_matrix)
-		is_find, locations = False, []
-		(talls, rows, columns) = self.hpc.shape
-		flag = False
-		start_location = end_location = (0, 0, 0)
-		(last_h, last_i, last_j) = last_location
-		for h in range(last_h, talls):
-			for i in range(last_i, rows):
-				for j in range(last_j, columns):
-					h0 = height[h, i, j]
-					l0 = right[h, i, j] - left[h, i, j] + 1
-					w0 = depth_in[h, i, j] - depth_out[h, i, j] + 1
-					v = h0 * l0 * w0
-					if v < task.volume:
-						continue
-					start0_location = (h - h0 + 1, depth_out[h, i, j], left[h, i, j])
-					end0_location = (h, depth_in[h, i, j], right[h, i, j])
-					start_location, end_location = self.get_precise_start_and_end_locations_for_task(task,
-					                                                                                 start0_location,
-					                                                                                 end0_location)
-					if not is_back_filling_task:
-						is_find = flag = True
-						break
-					else:
-						if self.check_if_back_filling_task_can_put(start0_location, end0_location, preserve_locations,
-						                                           task, waiting_time):
-							is_find = flag = True
-							break
-				if flag:
-					break
-			if flag:
-				break
-
-		if is_find:
-			locations = self.get_all_locations_between_two_points(start_location, end_location)
-			return is_find, locations
-
-		if op.eq(last_location, (0, 0, 0)):
-			return is_find, locations
-
-		return self.first_fit(task, time_matrix, is_back_filling_task, waiting_time, preserve_locations)
-
 	def best_fit(self, task, time_matrix, is_back_filling_task=False, waiting_time=0, preserve_locations=None):
 		height, depth_out, depth_in, left, right = self.get_auxiliary_data(time_matrix)
 		is_find, locations = False, []
@@ -541,59 +478,6 @@ class Conventional:
 								                                                                                 start0_location,
 								                                                                                 end0_location)
 								if cur_volumes == task.volume:
-									flag = True
-									break
-				if flag:
-					break
-			if flag:
-				break
-
-		if is_find:
-			locations = self.get_all_locations_between_two_points(start_location, end_location)
-		return is_find, locations
-
-	def worst_fit(self, task, time_matrix, is_back_filling_task=False, waiting_time=0, preserve_locations=None):
-		height, depth_out, depth_in, left, right = self.get_auxiliary_data(time_matrix)
-		is_find, locations = False, []
-		(talls, rows, columns) = self.hpc.shape
-		start_location = end_location = (0, 0, 0)
-		last_volume = 0
-		flag = False
-		for h in range(talls):
-			for i in range(rows):
-				for j in range(columns):
-					h0 = height[h, i, j]
-					l0 = right[h, i, j] - left[h, i, j] + 1
-					w0 = depth_in[h, i, j] - depth_out[h, i, j] + 1
-					v = h0 * l0 * w0
-					if v < task.volume:
-						continue
-					start0_location = (h - h0 + 1, depth_out[h, i, j], left[h, i, j])
-					end0_location = (h, depth_in[h, i, j], right[h, i, j])
-					if not is_back_filling_task:
-						is_find = True
-						cur_volumes = self.get_volumes_between_two_points(start0_location, end0_location)
-						if cur_volumes > last_volume:
-							last_volume = cur_volumes
-							start_location, end_location = self.get_precise_start_and_end_locations_for_task(task,
-							                                                                                 start0_location,
-							                                                                                 end0_location)
-
-							if cur_volumes == self.total_nodes:
-								flag = True
-								break
-					else:
-						if self.check_if_back_filling_task_can_put(start0_location, end0_location, preserve_locations,
-						                                           task, waiting_time):
-							is_find = True
-							cur_volumes = self.get_volumes_between_two_points(start0_location, end0_location)
-							if cur_volumes > last_volume:
-								last_volume = cur_volumes
-								start_location, end_location = self.get_precise_start_and_end_locations_for_task(task,
-								                                                                                 start0_location,
-								                                                                                 end0_location)
-
-								if cur_volumes == self.total_nodes:
 									flag = True
 									break
 				if flag:
@@ -665,21 +549,6 @@ class Conventional:
 					else:
 						matrix[h, i, j] = 0
 		return matrix
-
-	# start backfilling in offline situation
-	def start_offline_back_filling(self, next_index, waiting_time, preserve_locations):
-		cur_scheduled_tasks_num = self.has_scheduled_task_num
-		for i in range(next_index, len(self.taskQueue)):
-			if self.empty_nodes == 0:
-				break
-			task = self.taskQueue[i]
-			if self.has_run(task) or self.empty_nodes < task.volume or task.volume >= 50:
-				continue
-			result, locations = self.schedule(FitMethodType.FIRST_FIT, task, self.hpc, is_back_filling_task=True,
-			                                  waiting_time=waiting_time, preserve_locations=preserve_locations)
-			if result:
-				self.do_after_find(task, locations)
-		return cur_scheduled_tasks_num != self.has_scheduled_task_num
 
 	# start backfilling  with FCFS strategy
 	def start_online_back_filling(self, waiting_time, preserve_locations):
@@ -766,7 +635,7 @@ class Conventional:
 					else:
 						self.start_online_back_filling_with_sort(left_waiting_time, locations)
 				else:
-					self.start_offline_back_filling(task_index + 1, left_waiting_time, locations)
+					pass
 			self.count_utilization(self.time_counter)
 		cur_empty_nodes = self.empty_nodes
 		last_bf_success = True
@@ -794,23 +663,8 @@ class Conventional:
 						else:
 							self.start_online_back_filling_with_sort(left_waiting_time, locations)
 					elif empty_nodes_num_changed or last_bf_success:
-						last_bf_success = self.start_offline_back_filling(task_index + 1, left_waiting_time, locations)
+						pass
 		return locations
-
-	def offline_simulate(self):
-		last_location = (0, 0, 0)
-		locations = []
-		for i, task in enumerate(self.taskQueue):
-			if self.can_program_stop:
-				break
-			if self.has_run(task):
-				continue
-			found, locations = self.schedule(self.method_name, task, time_matrix=self.hpc, last_location=last_location)
-			if not found:
-				locations = self.process_can_not_schedule(task, i)
-			self.do_after_find(task, locations)
-			last_location = locations[task.volume - 1]
-			locations.clear()
 
 	def online_simulate_with_FCFS(self):
 		last_location = (0, 0, 0)
