@@ -18,7 +18,7 @@ class Conventional:
 	# size: the size of HPC system
 	# data_path: the file path to store the utilization data
 	# time_path: the file path to store the cost time of a simulation
-	# arrival_rate: the lambda of Poisson process
+	# arrival_rate: the job arrival rate into the waiting queue
 	def __init__(self, size, task_queue, data_path=None, time_path=None, arrival_rate=2,
 	             method_name=FitMethodType.FIRST_FIT,
 	             enable_back_filling=False, enable_visualize=False, st=1, enable_time_sort=False):
