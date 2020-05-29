@@ -11,8 +11,8 @@ from Simulator.Conventional import Conventional
 
 
 class Bootstrap:
-	# pre_job_prototypes: pre-input job list
-	# input_job_prototypes: one synthetic workload
+	# pre_job_prototypes: job list of initial workload
+	# input_job_prototypes: one of N synthetic workloads
 	# hpc_size: the size of HPC
 	def __init__(self, v=24):
 		self.pre_job_prototypes = []
@@ -56,7 +56,7 @@ class Bootstrap:
 				all_jobs.append(t)
 		return all_jobs
 
-	# online FCFS strategy
+	# FCFS strategy
 	def do_online_simulate_with_FCFS(self, n, rate, enable_bf, data_path, time_data_path, flag=True, itr=1):
 		task_queue = self.get_task_queue(numbered=n, itr=itr)
 		if flag:
@@ -70,7 +70,7 @@ class Bootstrap:
 			                         arrival_rate=rate, enable_back_filling=enable_bf, st=2)
 			scheduler.online_simulate_with_FCFS()
 
-	# online SJF strategy
+	# SJF strategy
 	def do_online_simulate_with_SJF(self, n, rate, enable_bf, data_path, time_data_path, flag=True, itr=1):
 		task_queue = self.get_task_queue(numbered=n, itr=itr)
 		if flag:
