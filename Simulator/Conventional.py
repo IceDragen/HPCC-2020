@@ -16,9 +16,10 @@ from Simulator.Entities import FitMethodType, Task, RunningRecord
 class Conventional:
 	# hpc: the HPC system
 	# size: the size of HPC system
-	# data_path: the file path to store the utilization data
+	# data_path: the file path to store the data of system utilization 
+	# taskQueue: the input jobs of N synthetic workloads
 	# time_path: the file path to store the cost time of a simulation
-	# arrival_rate: the job arrival rate into the waiting queue
+	# arrival_rate: the job arrival rate λ 
 	def __init__(self, size, task_queue, data_path=None, time_path=None, arrival_rate=2,
 	             method_name=FitMethodType.FIRST_FIT,
 	             enable_back_filling=False, enable_visualize=False, st=1, enable_time_sort=False):
@@ -71,7 +72,8 @@ class Conventional:
 		self.last_location = (0, 0, 0)
 
 		self.visualizer = None
-
+		
+            # the matrix of job ID
 	def job_name_matrix_init(self):
 		[height, rows, columns] = self.job_name_matrix.shape
 		for i in range(rows):
@@ -92,7 +94,7 @@ class Conventional:
 		self.prototype_queue_cursor = 5
 		self.poisson_queue_cursor = 0
 
-	# judge if a task has been scheduled
+	# test if a task has been scheduled
 	def has_run(self, task):
 		return task.name in self.running_task_ids
 
@@ -128,7 +130,7 @@ class Conventional:
 
 		return is_find, locations
 
-	# the runnning jobs' rest time minus one minute
+	# the decrease of execution time of each running job
 	def time_process(self):
 		[height, rows, columns] = self.hpc.shape
 		for h in range(height):
@@ -145,7 +147,7 @@ class Conventional:
 
 		self.check_and_update_record()
 
-	# remove record from self.running_task_records which records'rest time is 0
+	# remove a job from the system once complete
 	def check_and_update_record(self):
 		removing_id_list = []
 		for i, r in enumerate(self.running_task_list):
@@ -162,7 +164,7 @@ class Conventional:
 			new_running_tasks = [t for i, t in enumerate(self.running_task_list) if i not in removing_id_list]
 			self.running_task_list = new_running_tasks
 
-	# judge if start or end recording system utilization
+	# test if start or end system utilization recording
 	def check_if_adjust_record_util(self):
 		if 'j3530' in self.running_task_ids and self.target_fit_job_num == 2010:
 			self.start_record_util = False
@@ -194,7 +196,7 @@ class Conventional:
 			f.write(str(cost_time))
 			f.write('\n')
 
-	# process the task that can be scheduled currently
+	# process the task that can be currently scheduled 
 	def do_after_find(self, task, locations):
 		self.update_hpc(locations, task)
 		self.check_if_adjust_record_util()
@@ -283,7 +285,7 @@ class Conventional:
 			d = sum_matrix[d1, i, d2]
 		return a + d - b - c
 
-	# get the four auxiliary matrix for finding a cuboid to put the task
+	# get the four auxiliary matrix for finding a cuboid for each task
 	def get_auxiliary_data(self, matrix):
 		height = np.zeros(matrix.shape, dtype=int)
 		depth_in = np.zeros(matrix.shape, dtype=int)
@@ -358,7 +360,7 @@ class Conventional:
 						right[h, i, j] = -1
 		return height, depth_out, depth_in, left, right
 
-	# calculate the amount of nodes between given two locations
+	# calculate the number of nodes between two locations in the system
 	def get_volumes_between_two_points(self, start_location, end_location):
 		(h1, i1, j1) = start_location
 		(h2, i2, j2) = end_location
@@ -378,7 +380,7 @@ class Conventional:
 					locations.append((h, i, j))
 		return locations
 
-	# the found cuboid maybe larger then the nodes of the task requested, so we must get the presize locations to put the task
+	# the found cuboid may has more nodes than that requested by a task, so we must get the detailed locations to put the task
 	def get_precise_start_and_end_locations_for_task(self, task, start_location, end_location):
 		(start_h, start_i, start_j) = start_location
 		(end_h, end_i, end_j) = end_location
@@ -397,7 +399,7 @@ class Conventional:
 			tmp = math.ceil(task.volume / s)
 			return start_location, (start_h + tmp - 1, end_i, end_j)
 
-	# judge if test_location is in the middle of start_location and end_location
+	# Determine if judge_location is in the middle of start_location and end_location
 	def judge_in_middle(self, start_location, end_location, judge_location):
 		(start_h, start_i, start_j) = start_location
 		(end_h, end_i, end_j) = end_location
@@ -407,7 +409,7 @@ class Conventional:
 		c = start_j <= j_j <= end_j
 		return a and b and c
 
-	# judge if the task can be put in between the given two nodes
+	# test if the task can be put in between the given two nodes
 	def check_if_back_filling_task_can_put(self, start_location, end_location, preserve_locations, task, waiting_time):
 		r1 = self.judge_in_middle(preserve_locations[0], preserve_locations[-1], start_location)
 		r2 = self.judge_in_middle(preserve_locations[0], preserve_locations[-1], end_location)
@@ -634,7 +636,7 @@ class Conventional:
 				locations.append(t)
 		return locations
 
-	# get the locations and waiting time for current blocked job
+	# get the start time and the locations for currently blocked job
 	def universal_find_nodes_and_min_wait_time(self, first_task):
 		locations = []
 		min_wait_time = sys.maxsize
@@ -651,7 +653,7 @@ class Conventional:
 				break
 		return locations, min_wait_time
 
-	# a auxiliary function to find after how many minutes the blocked task can be put on the system
+	# a auxiliary function to find after how long until the blocked task can be put on the system
 	def get_possible_time_matrix(self, matrix, judge_state):
 		[height, rows, columns] = matrix.shape
 		for h in range(height):
@@ -679,7 +681,7 @@ class Conventional:
 				self.do_after_find(task, locations)
 		return cur_scheduled_tasks_num != self.has_scheduled_task_num
 
-	# start backfilling in online situation with FCFS strategy
+	# start backfilling  with FCFS strategy
 	def start_online_back_filling(self, waiting_time, preserve_locations):
 		cur_scheduled_tasks_num = self.has_scheduled_task_num
 		start_index = self.poisson_queue_cursor
@@ -704,7 +706,7 @@ class Conventional:
 				break
 		return cur_scheduled_tasks_num != self.has_scheduled_task_num
 
-	# start backfilling in online situation with SJF strategy
+	# start backfilling with SJF strategy
 	def start_online_back_filling_with_sort(self, waiting_time, preserve_locations):
 		cur_scheduled_tasks_num = self.has_scheduled_task_num
 		can_bf_task_num = self.arrival_rate
@@ -736,7 +738,7 @@ class Conventional:
 			heapq.heappush(self.sorted_queue, t)
 		return cur_scheduled_tasks_num != self.has_scheduled_task_num
 
-	# count current system utilization
+	# calculate current system utilization
 	def count_utilization(self, counter):
 		if not self.start_record_util:
 			return
@@ -752,7 +754,7 @@ class Conventional:
 		if counter % 15 == 0:
 			self.u15.append(str_cur_util)
 
-	# process the task cannot scheduled currently
+	# process the currently blocked task
 	def process_can_not_schedule(self, task, task_index, is_online=False):
 		locations, wait_time = self.universal_find_nodes_and_min_wait_time(task)
 		if self.enable_back_filling and self.has_scheduled_task_num >= 1520:
@@ -843,7 +845,7 @@ class Conventional:
 			last_location = locations[task.volume - 1]
 			locations.clear()
 
-	# move λ tasks from prototype queue to the task queue which is a list for FCFS
+	# move λ tasks from prototype queue to the waiting queue under FCFS
 	def move_task_from_prototype_to_poisson(self):
 		move_task_num = self.arrival_rate
 		left_task_num = len(self.prototype_queue) - self.prototype_queue_cursor
@@ -896,7 +898,7 @@ class Conventional:
 			last_location = locations[task.volume - 1]
 			locations.clear()
 
-	# move λ tasks from prototype queue to the task queue which is a priority queue for SJF
+	# move λ tasks from prototype queue to the task queue under SJF
 	def move_task_from_prototype_to_sorted_queue(self):
 		move_task_num = self.arrival_rate
 		left_task_num = len(self.prototype_queue) - self.prototype_queue_cursor
