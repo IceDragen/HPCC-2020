@@ -128,7 +128,8 @@ if __name__ == '__main__':
 	for i in range(4):
 		n_voxels = np.zeros([4, 4, 4], dtype=bool)
 		n_voxels[0, 0, i] = True
-		queue.put(n_voxels)
-	queue.put('stop')
+		msg = VisualizerMsg(VMsgType.CONTINUE, n_voxels)
+		queue.put(msg)
+	msg = VisualizerMsg(VMsgType.STOP, None)
 	visualizer = Visualizer(queue)
 	visualizer.start()

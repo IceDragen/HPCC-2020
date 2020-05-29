@@ -145,6 +145,7 @@ class Wireless:
 
 		if self.counter > 0:
 			self.counter = self.counter - 1
+		self.print_time_matrix()
 
 	# remove a job from the system once complete
 	def check_and_update_record(self):
@@ -416,7 +417,7 @@ class Wireless:
 			task = self.poisson_task_queue[i]
 			if self.has_run(task) or self.empty_nodes < task.volume or task.volume >= 50:
 				continue
-			result, locations = self.best_fit(task, 0, True, waiting_time, preserve_locations)
+			result, locations = self.first_fit(task, 0, True, waiting_time, preserve_locations)
 			if result:
 				self.do_after_find(task, locations)
 			task_num_counter += 1
@@ -443,7 +444,7 @@ class Wireless:
 			if self.empty_nodes < task.volume or task.volume >= 50:
 				false_task_list.append(task)
 				continue
-			result, locations = self.best_fit(task, 0, True, waiting_time, preserve_locations)
+			result, locations = self.first_fit(task, 0, True, waiting_time, preserve_locations)
 			if result:
 				self.do_after_find(task, locations)
 			else:

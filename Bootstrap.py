@@ -89,6 +89,7 @@ class Bootstrap:
 
 if __name__ == '__main__':
 	bootstrap = Bootstrap()
-	data_path = ''
-	time_data_path = ''
-	bootstrap.do_online_simulate_with_FCFS(5, 5, True, data_path, time_data_path)
+	data_path = './data.txt'
+	time_data_path = './time.txt'
+	bootstrap.do_online_simulate_with_FCFS(10, 7, True, data_path, time_data_path)
+	# bootstrap.do_online_simulate_with_SJF(20, 5, True, data_path, time_data_path, flag=False)
