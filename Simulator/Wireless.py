@@ -685,7 +685,7 @@ if __name__ == '__main__':
 	task_num = 2000
 	method_name = FitMethodType.FIRST_FIT
 	max_cost_time = 10
-	queue = generate_task(task_num, v * v * v * 0.5, max_cost_time)
+	queue = generate_task(task_num, int(v * v * v * 0.5), max_cost_time)
 	# print(len(queue))
 	wireless = Wireless(size=hpc_size, task_queue=queue, arrival_rate=5, method_name=method_name,
 	                    data_path='./data.txt', time_path='./time.txt', enable_back_filling=True,
