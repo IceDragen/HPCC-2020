@@ -3,8 +3,9 @@ import random
 import sys
 import threading
 import time
+from multiprocessing import Process, Queue
 
-from queue import Queue, PriorityQueue
+# from queue import Queue, PriorityQueue
 import heapq
 
 import numpy as np
@@ -31,7 +32,7 @@ class Wireless:
 		self.time_data_file_path = time_path
 		self.enable_sort = enable_time_sort
 
-		self.visualQueue = Queue(maxsize=0)
+		self.visualQueue = Queue()
 		self.first_display = True
 		self.enable_visualize = enable_visualize
 		self.visualizer = None
@@ -684,11 +685,13 @@ if __name__ == '__main__':
 	task_num = 2000
 	method_name = FitMethodType.FIRST_FIT
 	max_cost_time = 10
-	queue = generate_task(task_num, v * v * v, max_cost_time)
-	print(len(queue))
+	queue = generate_task(task_num, v * v * v * 0.5, max_cost_time)
+	# print(len(queue))
 	wireless = Wireless(size=hpc_size, task_queue=queue, arrival_rate=5, method_name=method_name,
 	                    data_path='./data.txt', time_path='./time.txt', enable_back_filling=True,
 	                    enable_visualize=True, enable_time_sort=False)
-	threading.Thread(target=wireless.online_simulate_with_FCFS).start()
+	# threading.Thread(target=wireless.online_simulate_with_FCFS).start()
+	p = Process(target=wireless.online_simulate_with_FCFS)
+	p.start()
 	# wireless.online_simulate_with_FCFS()
 	wireless.start_visualize()
