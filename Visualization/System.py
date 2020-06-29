@@ -1,17 +1,20 @@
 import os
 import random
 import sys
+import threading
 import time
+from multiprocessing import Process, Queue
 
-from queue import Queue, PriorityQueue
+# from queue import Queue, PriorityQueue
 import heapq
 
 import numpy as np
 
 from Simulator.Entities import FitMethodType, Task, RunningRecord
+from Visualization.Visualizer import VisualizerMsg, VMsgType, Visualizer
 
 
-class Wireless:
+class System:
 	# hpc: the HPC system
 	# size: the size of HPC system
 	# data_path: the file path to store the data of system utilization 
@@ -29,10 +32,11 @@ class Wireless:
 		self.time_data_file_path = time_path
 		self.enable_sort = enable_time_sort
 
-		self.visualQueue = Queue(maxsize=0)
+		self.visualQueue = Queue()
 		self.first_display = True
 		self.enable_visualize = enable_visualize
 		self.visualizer = None
+		self.vsg_list = []
 
 		self.hpc = np.zeros(size, dtype=int)
 		self.job_name_matrix = np.zeros(size, dtype=int)
@@ -126,8 +130,8 @@ class Wireless:
 
 	# the decrease of execution time of each running job
 	def time_process(self):
-		# changed = False
-		# need_visualize_change = False
+		changed = False
+		need_visualize_change = False
 
 		[height, rows, columns] = self.hpc.shape
 		for h in range(height):
@@ -135,17 +139,56 @@ class Wireless:
 				for j in range(columns):
 					if self.hpc[h, i, j] > 0:
 						self.hpc[h, i, j] = self.hpc[h, i, j] - 1
-						# changed = True
-						# if self.enable_visualize and self.hpc[h, i, j] == 0:
-						# 	need_visualize_change = True
+						changed = True
+						if self.enable_visualize and self.hpc[h, i, j] == 0:
+							need_visualize_change = True
 					if self.hpc[h, i, j] == 0:
 						self.job_name_matrix[h, i, j] = 0
 
 		self.check_and_update_record()
 
+		if self.enable_visualize and need_visualize_change:
+			self.post_process_voxels()
+
 		if self.counter > 0:
 			self.counter = self.counter - 1
-		self.print_time_matrix()
+		# self.print_time_matrix()
+
+
+
+	def post_process_voxels(self):
+		voxels = np.zeros(self.hpc.shape, dtype=bool)
+		[height, rows, columns] = self.hpc.shape
+		for i in range(rows):
+			for j in range(columns):
+				for h in range(height):
+					if self.hpc[h, i, j] > 0:
+						voxels[j, i, h] = True
+					else:
+						voxels[j, i, h] = False
+		vMsg = VisualizerMsg(VMsgType.CONTINUE, voxels)
+		# self.vsg_list.append(vMsg)
+		self.visualQueue.put(vMsg)
+
+	def put_vsm_msg(self):
+		if len(self.vsg_list) > 0:
+			self.visualQueue.put(self.vsg_list.pop())
+		timer = threading.Timer(1, self.put_vsm_msg)
+		timer.start()
+
+	def start_visualize(self):
+		if self.enable_visualize:
+			if self.visualizer is None:
+				self.visualizer = Visualizer(self.visualQueue)
+			self.visualizer.start()
+			# timer = threading.Timer(1, self.put_vsm_msg)
+			# timer.start()
+
+	def stop_visualize(self):
+		if self.enable_visualize:
+			n_voxels = np.zeros(self.hpc.shape, dtype=bool)
+			vMsg = VisualizerMsg(VMsgType.STOP, n_voxels)
+			self.visualQueue.put(vMsg)
 
 	# remove a job from the system once complete
 	def check_and_update_record(self):
@@ -552,6 +595,9 @@ class Wireless:
 			locations.clear()
 			found = False
 
+		if self.enable_visualize:
+			self.stop_visualize()
+
 	# move λ tasks from prototype queue to the task queue under FCFS
 	def move_task_from_prototype_to_poisson(self):
 		move_task_num = self.arrival_rate
@@ -604,6 +650,8 @@ class Wireless:
 			last_location = locations[task.volume - 1]
 			locations.clear()
 			found = False
+		if self.enable_visualize:
+			self.stop_visualize()
 
 	# move λ tasks from prototype queue to the task queue under SJF
 	def move_task_from_prototype_to_sorted_queue(self):
@@ -619,5 +667,31 @@ class Wireless:
 		self.prototype_queue_cursor = self.prototype_queue_cursor + move_task_num
 		return move_task_num
 
+def generate_task(num, total_nodes, max_cost_time):
+	queue = []
+	for i in range(1, num+1):
+		j_name = 'j' + str(i)
+		volume = random.randint(1, total_nodes)
+		cost_time = random.randint(1, max_cost_time)
+		task = Task(j_name, volume, cost_time)
+		queue.append(task)
+	return queue
 
 
+if __name__ == '__main__':
+	v = 10
+	hpc_size = [v, v, v]
+	task_arrival_rate = 5
+	task_num = 2000
+	method_name = FitMethodType.FIRST_FIT
+	max_cost_time = 20
+	queue = generate_task(task_num, int(v * v * v * 0.1), max_cost_time)
+	# print(len(queue))
+	system = System(size=hpc_size, task_queue=queue, arrival_rate=5, method_name=method_name,
+	                data_path='./data.txt', time_path='./time.txt', enable_back_filling=True,
+	                enable_visualize=True, enable_time_sort=False)
+	# threading.Thread(target=wireless.online_simulate_with_FCFS).start()
+	p = Process(target=system.online_simulate_with_FCFS)
+	p.start()
+	# wireless.online_simulate_with_FCFS()
+	system.start_visualize()
