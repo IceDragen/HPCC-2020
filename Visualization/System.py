@@ -37,6 +37,7 @@ class System:
 		self.enable_visualize = enable_visualize
 		self.visualizer = None
 		self.vsg_list = []
+		self.is_first_can_not_schedule = True
 
 		self.hpc = np.zeros(size, dtype=int)
 		self.job_name_matrix = np.zeros(size, dtype=int)
@@ -522,6 +523,9 @@ class System:
 
 	#  process the currently blocked task
 	def process_can_not_schedule(self, task, task_index, is_online=False):
+		if self.is_first_can_not_schedule:
+			self.post_process_voxels()
+			self.is_first_can_not_schedule = False
 		locations, wait_time = self.universal_find_nodes_and_min_wait_time(task)
 		if self.enable_back_filling and self.has_scheduled_task_num >= 1520:
 			left_waiting_time = wait_time
@@ -684,7 +688,7 @@ if __name__ == '__main__':
 	task_arrival_rate = 5
 	task_num = 2000
 	method_name = FitMethodType.FIRST_FIT
-	max_cost_time = 20
+	max_cost_time = 10
 	queue = generate_task(task_num, int(v * v * v * 0.1), max_cost_time)
 	# print(len(queue))
 	system = System(size=hpc_size, task_queue=queue, arrival_rate=5, method_name=method_name,
