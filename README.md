@@ -1,6 +1,6 @@
 1. This Simulator is developed in Python.
 
-2. The entry function file is Bootstrap.py.
+2. The entry function file is Simulator/Bootstrap.py.
    Function online_simulate_with_FCFS uses the FCFS strategy and function online_simulate_with_SJF
    uses the SJF strategy.
 
@@ -8,4 +8,4 @@
 
 4. Simulator/Conventional.py implememts the conventional Blue Waters system with 3D torus interconnect
 
-5. Visualization/Visualizer implements the visualization of the system utilization the HPC system with 3D torus interconnect.
+5. Visualization/System.py implements the visualization of the system utilization the HPC system with 3D torus interconnect.
