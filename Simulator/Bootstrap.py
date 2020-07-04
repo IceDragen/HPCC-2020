@@ -21,7 +21,7 @@ class Bootstrap:
 
 	# read job sizes and walltimes from data file
 	def data_init(self, itr=1):
-		data_path_prefix = 'Simulator/data/'
+		data_path_prefix = './data/'
 		pre_job_data_path = data_path_prefix + '/pre_job_data_{}.csv'.format(itr)
 		input_job_data_path = data_path_prefix + '/input_job_data_{}.csv'.format(itr)
 		self.pre_job_prototypes = self.get_task_prototype(pre_job_data_path)
