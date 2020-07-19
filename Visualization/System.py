@@ -20,7 +20,7 @@ class System:
 	# data_path: the file path to store the data of system utilization 
 	# taskQueue: the input jobs of N synthetic workloads
 	# time_path: the file path to store the cost time of a simulation
-	# arrival_rate: the job arrival rate λ 
+	# arrival_rate: the job arrival rate
 	def __init__(self, size, task_queue, arrival_rate=200, method_name=FitMethodType.FIRST_FIT,
 	             data_path=None, time_path=None, enable_back_filling=False, enable_visualize=False, st=1,
 	             enable_time_sort=False):
