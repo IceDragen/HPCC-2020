@@ -1,5 +1,5 @@
 1. This program is developed in Python3. To run the program, you need to install two python library named numpy and matplotlib.
-2. When you open the project , you need to open the IEEE-Cluster-2020 as the root directory, the module Simulator and Visualizer are dependent.
+2. When you open the project , you need to open the HPCC-2020 as the root directory, the module Simulator and Visualizer are dependent.
 3. The entry function file is Simulator/Bootstrap.py.
    Function online_simulate_with_FCFS uses the FCFS strategy and function online_simulate_with_SJF
    uses the SJF strategy.
